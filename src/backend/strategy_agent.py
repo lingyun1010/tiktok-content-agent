@@ -70,14 +70,15 @@ def _hashtag(value: str) -> str:
     return "#" + "".join(word.capitalize() for word in words)
 
 
-def _hashtags(format_name: str, topic: str) -> list[str]:
+def _hashtags(format_name: str, topic: str | None) -> list[str]:
     candidates = [
-        _hashtag(topic),
         _hashtag(format_name),
         "#TikTokContent",
         "#ContentExperiment",
         "#HairCareTips",
     ]
+    if topic is not None:
+        candidates.insert(0, _hashtag(topic))
     return list(dict.fromkeys(candidates))
 
 
@@ -141,9 +142,11 @@ class ManualStrategyProvider:
             if weak_retention
             else "Keep the edit focused and preserve the source post's supported pacing."
         )
+        topic_label = source["topic"] or "the source post's subject"
+        hook_text = source["hook"] or "Start with the clearest practical benefit"
         caption = (
-            f"{source['hook']}. A clearer way to approach "
-            f"{source['topic'].lower()}—save this for your next routine."
+            f"{hook_text}. A clearer way to approach "
+            f"{topic_label.lower()}—save this for your next routine."
         )
 
         return {
@@ -168,7 +171,7 @@ class ManualStrategyProvider:
             "strategy": {
                 "primary_goal": (
                     f"Retest the strongest supported {source['format']} approach "
-                    f"around {source['topic']} while changing one creative variable."
+                    f"around {topic_label} while changing one creative variable."
                 ),
                 "repeat": {
                     "source_post_id": source["post_id"],
@@ -192,7 +195,7 @@ class ManualStrategyProvider:
             },
             "content_item": {
                 "id": "manual-001",
-                "working_title": f"{source['topic']}: one clear next-step test",
+                "working_title": f"{topic_label.capitalize()}: one clear next-step test",
                 "format": source["format"],
                 "topic": source["topic"],
                 "source_post_id": source["post_id"],
@@ -201,10 +204,10 @@ class ManualStrategyProvider:
                     "the test focused so the next performance review is interpretable."
                 ),
                 "script": {
-                    "hook": source["hook"],
+                    "hook": hook_text,
                     "body": [
                         (
-                            f"Here is the part of {source['topic'].lower()} "
+                            f"Here is the part of {topic_label.lower()} "
                             "that is easiest to overcomplicate."
                         ),
                         (

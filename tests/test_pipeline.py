@@ -3,11 +3,21 @@
 from __future__ import annotations
 
 import json
+import importlib.util
+import os
 import tempfile
 import unittest
+from io import BytesIO
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 
+from src.backend.ingest.airtable import (
+    AirtableConfig,
+    AirtableError,
+    load_posts as load_airtable_posts,
+)
 from src.backend.metrics import add_metrics, calculate_metrics, summarise_metrics
 from src.backend.normalise import normalise_post, normalise_posts
 from src.backend.pipeline import run_pipeline
@@ -93,6 +103,122 @@ class NormalisationTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "duplicate 'post_id'"):
             normalise_posts([raw, {**raw, "_row_number": 3}])
+
+    def test_keeps_missing_topic_and_hook_as_none(self) -> None:
+        raw = {
+            "_row_number": 2,
+            "post_id": "metadata-light",
+            "platform": "tiktok",
+            "published_at": "2026-05-01T10:00:00Z",
+            "format": "Product demo",
+            "caption": "Synthetic caption",
+            "duration_seconds": "20",
+            "views": "100",
+            "likes": "10",
+            "comments": "2",
+            "shares": "3",
+        }
+
+        post = normalise_post(raw)
+
+        self.assertIsNone(post["topic"])
+        self.assertIsNone(post["hook"])
+
+
+class AirtableIngestionTest(unittest.TestCase):
+    ENVIRONMENT = {
+        "AIRTABLE_API_KEY": "test-secret-key",
+        "AIRTABLE_BASE_ID": "appSynthetic",
+        "AIRTABLE_TABLE_ID": "tblSynthetic",
+        "AIRTABLE_VIEW_ID": "viwSynthetic",
+    }
+
+    def test_requires_all_airtable_environment_variables_without_values(self) -> None:
+        with self.assertRaises(AirtableError) as context:
+            load_airtable_posts(10, environ={"AIRTABLE_API_KEY": "do-not-print"})
+
+        message = str(context.exception)
+        self.assertIn("AIRTABLE_BASE_ID", message)
+        self.assertIn("AIRTABLE_TABLE_ID", message)
+        self.assertIn("AIRTABLE_VIEW_ID", message)
+        self.assertNotIn("do-not-print", message)
+
+    @unittest.skipUnless(
+        importlib.util.find_spec("dotenv"),
+        "python-dotenv is not installed",
+    )
+    def test_loads_airtable_configuration_from_local_dotenv(self) -> None:
+        dotenv_content = "\n".join(
+            f"{name}={value}" for name, value in self.ENVIRONMENT.items()
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            dotenv_path = Path(temporary_directory) / ".env"
+            dotenv_path.write_text(dotenv_content, encoding="utf-8")
+            with patch.dict(os.environ, {}, clear=True):
+                with patch("pathlib.Path.cwd", return_value=Path(temporary_directory)):
+                    config = AirtableConfig.from_environment()
+
+        self.assertEqual(config.api_key, "test-secret-key")
+        self.assertEqual(config.base_id, "appSynthetic")
+        self.assertEqual(config.table_id, "tblSynthetic")
+        self.assertEqual(config.view_id, "viwSynthetic")
+
+    def test_maps_fields_and_paginates_until_limit(self) -> None:
+        responses = [
+            {
+                "records": [
+                    {"id": "recOne", "fields": canonical_post(post_id="one")},
+                    {"id": "recTwo", "fields": canonical_post(post_id="two")},
+                ],
+                "offset": "next-page",
+            },
+            {
+                "records": [
+                    {"id": "recThree", "fields": canonical_post(post_id="three")}
+                ]
+            },
+        ]
+        requests = []
+
+        class FakeResponse:
+            def __init__(self, payload: dict[str, Any]) -> None:
+                self.body = BytesIO(json.dumps(payload).encode("utf-8"))
+
+            def __enter__(self) -> "FakeResponse":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return self.body.read()
+
+        def opener(request: Any, timeout: int) -> FakeResponse:
+            requests.append((request, timeout))
+            return FakeResponse(responses[len(requests) - 1])
+
+        rows = load_airtable_posts(
+            3,
+            environ=self.ENVIRONMENT,
+            opener=opener,
+        )
+
+        self.assertEqual([row["post_id"] for row in rows], ["one", "two", "three"])
+        self.assertEqual(rows[0]["_row_number"], 1)
+        self.assertEqual(rows[0]["views"], 100)
+        self.assertEqual(rows[0]["post_url"], "")
+        self.assertEqual(rows[0]["notes"], "")
+        self.assertEqual(
+            requests[0][0].get_header("Authorization"),
+            "Bearer test-secret-key",
+        )
+        self.assertEqual(requests[0][1], 30)
+        first_query = parse_qs(urlparse(requests[0][0].full_url).query)
+        second_query = parse_qs(urlparse(requests[1][0].full_url).query)
+        self.assertEqual(first_query["view"], ["viwSynthetic"])
+        self.assertEqual(first_query["pageSize"], ["3"])
+        self.assertEqual(second_query["offset"], ["next-page"])
+        self.assertEqual(second_query["pageSize"], ["1"])
 
 
 class MetricsTest(unittest.TestCase):
@@ -208,10 +334,57 @@ class MetricsTest(unittest.TestCase):
         self.assertEqual(summary["post_count"], 2)
         self.assertEqual(len(summary["format_performance"]), 2)
         self.assertEqual(len(summary["topic_performance"]), 2)
+        self.assertEqual(summary["topic_coverage_count"], 2)
         self.assertEqual(summary["region_coverage_count"], 2)
+
+    def test_skips_missing_topics_without_affecting_metrics(self) -> None:
+        posts = calculate_metrics(
+            [
+                canonical_post(post_id="known", topic="Routine"),
+                canonical_post(post_id="unknown", topic=None, hook=None),
+            ]
+        )
+
+        summary = summarise_metrics(posts)
+
+        self.assertEqual(summary["post_count"], 2)
+        self.assertEqual(summary["topic_coverage_count"], 1)
+        self.assertEqual(
+            [group["name"] for group in summary["topic_performance"]],
+            ["Routine"],
+        )
+        self.assertEqual(posts[1]["engagement_rate"], 0.2)
 
 
 class PipelineTest(unittest.TestCase):
+    def test_airtable_source_uses_canonical_pipeline_without_csv_input(self) -> None:
+        source_post = canonical_post()
+        raw_post = {
+            "_row_number": 1,
+            **{
+                field: "" if value is None else value
+                for field, value in source_post.items()
+            },
+        }
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with patch(
+                "src.backend.pipeline.load_airtable_posts",
+                return_value=[raw_post],
+            ) as loader:
+                paths = run_pipeline(
+                    input_path=None,
+                    limit=1,
+                    provider_name="manual",
+                    output_dir=Path(temporary_directory),
+                    source="airtable",
+                )
+
+            loader.assert_called_once_with(1)
+            self.assertIn(
+                "- Source: `airtable`",
+                paths[0].read_text(encoding="utf-8"),
+            )
+
     def test_manual_strategy_uses_repeat_pause_and_retention_signals(self) -> None:
         posts = calculate_metrics(
             [
@@ -257,6 +430,45 @@ class PipelineTest(unittest.TestCase):
         self.assertTrue(plan["strategy"]["retention_adjustment"]["required"])
         self.assertEqual(plan["content_item"]["source_post_id"], "repeat")
         self.assertIn("before publishing", plan["content_item"]["review_checks"][-1])
+
+    def test_manual_strategy_uses_neutral_missing_metadata_fallbacks(self) -> None:
+        posts = calculate_metrics([canonical_post(topic=None, hook=None)])
+        summary = summarise_metrics(posts)
+
+        plan = ManualStrategyProvider().generate_plan(posts, summary)
+
+        self.assertIsNone(plan["content_item"]["topic"])
+        self.assertEqual(
+            plan["content_item"]["script"]["hook"],
+            "Start with the clearest practical benefit",
+        )
+        self.assertNotIn("None", json.dumps(plan))
+
+    def test_report_explains_limited_topic_coverage(self) -> None:
+        source_post = canonical_post(topic=None, hook=None)
+        raw_post = {
+            "_row_number": 1,
+            **{
+                field: "" if value is None else value
+                for field, value in source_post.items()
+            },
+        }
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with patch(
+                "src.backend.pipeline.load_airtable_posts",
+                return_value=[raw_post],
+            ):
+                metrics_path, *_ = run_pipeline(
+                    input_path=None,
+                    limit=1,
+                    provider_name="manual",
+                    output_dir=Path(temporary_directory),
+                    source="airtable",
+                )
+
+            report = metrics_path.read_text(encoding="utf-8")
+        self.assertIn("Topic-level analysis is unavailable", report)
+        self.assertIn("0 of 1 posts include topic metadata", report)
 
     def test_sample_pipeline_generates_all_phase_2_outputs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

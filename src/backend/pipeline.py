@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 from typing import Sequence
 
-from .csv_source import load_posts
+from .csv_source import load_posts as load_csv_posts
 from .exporters import (
     build_caption_text,
     build_hashtags_text,
@@ -15,6 +15,7 @@ from .exporters import (
     write_json,
     write_text,
 )
+from .ingest.airtable import AirtableError, load_posts as load_airtable_posts
 from .metrics import calculate_metrics, summarise_metrics
 from .normalise import normalise_posts
 from .strategy_agent import get_strategy_provider
@@ -31,7 +32,17 @@ def build_parser() -> argparse.ArgumentParser:
         default="export_only",
         help="Pipeline mode. The MVP supports export_only.",
     )
-    parser.add_argument("--input", required=True, type=Path, help="Input CSV path.")
+    parser.add_argument(
+        "--source",
+        choices=("csv", "airtable"),
+        default="csv",
+        help="Input source. CSV remains the default.",
+    )
+    parser.add_argument(
+        "--input",
+        type=Path,
+        help="Input CSV path. Required when --source csv is selected.",
+    )
     parser.add_argument(
         "--limit", type=int, default=10, help="Maximum number of posts to analyse."
     )
@@ -51,15 +62,28 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def run_pipeline(
-    input_path: Path,
+    input_path: Path | None,
     limit: int,
     provider_name: str,
     output_dir: Path,
+    source: str = "csv",
 ) -> tuple[Path, Path, Path, Path, Path]:
     """Run ingestion, metrics, and offline plan generation."""
-    raw_posts = load_posts(input_path, limit)
+    if source == "csv":
+        if input_path is None:
+            raise ValueError("--input is required when --source csv is selected")
+        raw_posts = load_csv_posts(input_path, limit)
+        source_label: str | Path = input_path
+        empty_message = "Input CSV contains no data rows"
+    elif source == "airtable":
+        raw_posts = load_airtable_posts(limit)
+        source_label = "airtable"
+        empty_message = "Configured Airtable view contains no records"
+    else:
+        raise ValueError(f"Unsupported source: {source}")
+
     if not raw_posts:
-        raise ValueError("Input CSV contains no data rows")
+        raise ValueError(empty_message)
 
     posts = calculate_metrics(normalise_posts(raw_posts))
     summary = summarise_metrics(posts)
@@ -71,7 +95,7 @@ def run_pipeline(
     script_path = output_dir / "script.md"
     caption_path = output_dir / "caption.txt"
     hashtags_path = output_dir / "hashtags.txt"
-    write_text(metrics_path, build_metrics_markdown(posts, summary, input_path))
+    write_text(metrics_path, build_metrics_markdown(posts, summary, source_label))
     write_json(plan_path, content_plan)
     write_text(script_path, build_script_markdown(content_plan))
     write_text(caption_path, build_caption_text(content_plan))
@@ -81,13 +105,18 @@ def run_pipeline(
 
 def main(argv: Sequence[str] | None = None) -> int:
     """CLI entry point."""
-    args = build_parser().parse_args(argv)
-    output_paths = run_pipeline(
-        input_path=args.input,
-        limit=args.limit,
-        provider_name=args.provider,
-        output_dir=args.output_dir,
-    )
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    try:
+        output_paths = run_pipeline(
+            input_path=args.input,
+            limit=args.limit,
+            provider_name=args.provider,
+            output_dir=args.output_dir,
+            source=args.source,
+        )
+    except (AirtableError, FileNotFoundError, ValueError) as exc:
+        parser.error(str(exc))
     for output_path in output_paths:
         print(f"Generated {output_path}")
     return 0
