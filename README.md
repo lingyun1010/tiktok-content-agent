@@ -235,17 +235,11 @@ The default tests must remain independent of paid APIs and repository secrets.
 
 ## Roadmap
 
-1. Add schema validation and richer content-pillar comparisons.
-2. Add Airtable and authorised export adapters.
-3. Implement opt-in OpenAI and DeepSeek strategy providers.
-4. Validate structured provider responses.
-5. Expose results through a small backend API.
-6. Connect the dashboard to generated data.
-7. Add GitHub Actions for offline tests, JSON validation, and secret scanning.
-8. Design a separate, human-reviewed TikTok draft workflow.
+The phased product plan prioritises stronger analytics and deterministic
+strategy before external APIs, media generation, or publishing integrations.
 
-Private workflow outputs should be stored as protected artifacts or in private
-storage—not committed to this repository.
+See the [full project roadmap](docs/roadmap.md) and its
+[roadmap infographic](docs/assets/project-roadmap-infographic.png).
 
 ## Portfolio focus
 
@@ -267,4 +261,3 @@ human creative judgement.
 See [the project brief](docs/project-brief.md),
 [project context](docs/CONTEXT.md), and
 [architecture notes](docs/architecture.md) for deeper detail.
-
