@@ -12,8 +12,6 @@ into this shape before metrics are calculated.
 | `platform` | text | Must be `tiktok` |
 | `published_at` | ISO 8601 datetime | Publication time |
 | `format` | text | Creative format, such as `Talking head` |
-| `topic` | text | Primary subject or content theme |
-| `hook` | text | Opening premise or first-line hook |
 | `caption` | text | Published caption or synthetic equivalent |
 | `duration_seconds` | number greater than zero | Video duration |
 | `views` | non-negative integer | View count |
@@ -26,6 +24,8 @@ into this shape before metrics are calculated.
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `post_url` | absolute HTTP(S) URL | Public post URL when safe to process |
+| `topic` | text | Human-supplied primary subject or content theme |
+| `hook` | text | Human-supplied opening premise or first-line hook |
 | `saves` | non-negative integer | Save or favourite count |
 | `average_watch_time_seconds` | non-negative number | Average watch time |
 | `completion_rate` | number from 0 to 1 | Source-provided completion rate |
@@ -35,6 +35,10 @@ into this shape before metrics are calculated.
 | `notes` | text | Optional reviewed context |
 
 Blank optional values remain `None`; the pipeline does not invent them.
+Missing topics are excluded from topic grouping, and reports state when topic
+coverage limits that analysis. Missing hooks use neutral wording only in the
+deterministic draft output; they are not inferred or backfilled into the
+canonical record.
 Duplicate post IDs, invalid timestamps, fractional count fields, invalid URLs,
 and out-of-range percentages are rejected.
 
@@ -47,7 +51,7 @@ the table.
 Recommended Airtable field types:
 
 - Single line text: `post_id`, `platform`, `format`, `topic`, `hook`,
-  `caption`, `top_region`, `target_region`, `notes`
+  `caption`, `topic`, `hook`, `top_region`, `target_region`, `notes`
 - URL: `post_url`
 - Date with time: `published_at`
 - Number: `duration_seconds`, `views`, `likes`, `comments`, `shares`, `saves`,

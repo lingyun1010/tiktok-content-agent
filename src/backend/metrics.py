@@ -134,7 +134,9 @@ def _group_performance(
 ) -> list[dict[str, Any]]:
     groups: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
     for post in posts:
-        groups[post[field]].append(post)
+        value = post[field]
+        if value is not None:
+            groups[value].append(post)
 
     results = []
     for name, grouped_posts in groups.items():
@@ -198,6 +200,7 @@ def summarise_metrics(posts: list[dict[str, Any]]) -> dict[str, Any]:
             "weak_posts": [],
             "format_performance": [],
             "topic_performance": [],
+            "topic_coverage_count": 0,
             "signal_counts": {},
             "signal_posts": {},
             "region_coverage_count": 0,
@@ -252,6 +255,7 @@ def summarise_metrics(posts: list[dict[str, Any]]) -> dict[str, Any]:
         "weak_posts": [_post_snapshot(post) for post in weak_ranked[:3]],
         "format_performance": _group_performance(posts, "format"),
         "topic_performance": _group_performance(posts, "topic"),
+        "topic_coverage_count": sum(post["topic"] is not None for post in posts),
         "signal_counts": dict(sorted(signal_counts.items())),
         "signal_posts": signal_posts,
         "region_coverage_count": sum(

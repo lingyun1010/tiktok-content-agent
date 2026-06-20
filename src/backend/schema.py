@@ -9,8 +9,6 @@ REQUIRED_CSV_FIELDS = (
     "platform",
     "published_at",
     "format",
-    "topic",
-    "hook",
     "caption",
     "duration_seconds",
     "views",
@@ -21,6 +19,8 @@ REQUIRED_CSV_FIELDS = (
 
 OPTIONAL_CSV_FIELDS = (
     "post_url",
+    "topic",
+    "hook",
     "saves",
     "average_watch_time_seconds",
     "completion_rate",
@@ -41,8 +41,8 @@ class TikTokPost(TypedDict):
     post_url: str | None
     published_at: str
     format: str
-    topic: str
-    hook: str
+    topic: str | None
+    hook: str | None
     caption: str
     duration_seconds: float
     views: int

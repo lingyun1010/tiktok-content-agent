@@ -104,6 +104,26 @@ class NormalisationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate 'post_id'"):
             normalise_posts([raw, {**raw, "_row_number": 3}])
 
+    def test_keeps_missing_topic_and_hook_as_none(self) -> None:
+        raw = {
+            "_row_number": 2,
+            "post_id": "metadata-light",
+            "platform": "tiktok",
+            "published_at": "2026-05-01T10:00:00Z",
+            "format": "Product demo",
+            "caption": "Synthetic caption",
+            "duration_seconds": "20",
+            "views": "100",
+            "likes": "10",
+            "comments": "2",
+            "shares": "3",
+        }
+
+        post = normalise_post(raw)
+
+        self.assertIsNone(post["topic"])
+        self.assertIsNone(post["hook"])
+
 
 class AirtableIngestionTest(unittest.TestCase):
     ENVIRONMENT = {
@@ -314,7 +334,26 @@ class MetricsTest(unittest.TestCase):
         self.assertEqual(summary["post_count"], 2)
         self.assertEqual(len(summary["format_performance"]), 2)
         self.assertEqual(len(summary["topic_performance"]), 2)
+        self.assertEqual(summary["topic_coverage_count"], 2)
         self.assertEqual(summary["region_coverage_count"], 2)
+
+    def test_skips_missing_topics_without_affecting_metrics(self) -> None:
+        posts = calculate_metrics(
+            [
+                canonical_post(post_id="known", topic="Routine"),
+                canonical_post(post_id="unknown", topic=None, hook=None),
+            ]
+        )
+
+        summary = summarise_metrics(posts)
+
+        self.assertEqual(summary["post_count"], 2)
+        self.assertEqual(summary["topic_coverage_count"], 1)
+        self.assertEqual(
+            [group["name"] for group in summary["topic_performance"]],
+            ["Routine"],
+        )
+        self.assertEqual(posts[1]["engagement_rate"], 0.2)
 
 
 class PipelineTest(unittest.TestCase):
@@ -391,6 +430,45 @@ class PipelineTest(unittest.TestCase):
         self.assertTrue(plan["strategy"]["retention_adjustment"]["required"])
         self.assertEqual(plan["content_item"]["source_post_id"], "repeat")
         self.assertIn("before publishing", plan["content_item"]["review_checks"][-1])
+
+    def test_manual_strategy_uses_neutral_missing_metadata_fallbacks(self) -> None:
+        posts = calculate_metrics([canonical_post(topic=None, hook=None)])
+        summary = summarise_metrics(posts)
+
+        plan = ManualStrategyProvider().generate_plan(posts, summary)
+
+        self.assertIsNone(plan["content_item"]["topic"])
+        self.assertEqual(
+            plan["content_item"]["script"]["hook"],
+            "Start with the clearest practical benefit",
+        )
+        self.assertNotIn("None", json.dumps(plan))
+
+    def test_report_explains_limited_topic_coverage(self) -> None:
+        source_post = canonical_post(topic=None, hook=None)
+        raw_post = {
+            "_row_number": 1,
+            **{
+                field: "" if value is None else value
+                for field, value in source_post.items()
+            },
+        }
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with patch(
+                "src.backend.pipeline.load_airtable_posts",
+                return_value=[raw_post],
+            ):
+                metrics_path, *_ = run_pipeline(
+                    input_path=None,
+                    limit=1,
+                    provider_name="manual",
+                    output_dir=Path(temporary_directory),
+                    source="airtable",
+                )
+
+            report = metrics_path.read_text(encoding="utf-8")
+        self.assertIn("Topic-level analysis is unavailable", report)
+        self.assertIn("0 of 1 posts include topic metadata", report)
 
     def test_sample_pipeline_generates_all_phase_2_outputs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

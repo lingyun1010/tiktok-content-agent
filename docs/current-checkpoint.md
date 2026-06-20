@@ -26,6 +26,10 @@ or private Airtable identifiers in generated reports.
 Local development now loads those variables from an ignored repository-root
 `.env` file through `python-dotenv`. Existing shell variables take precedence.
 
+`topic` and `hook` are optional metadata. Missing values remain `None`, topic
+grouping excludes unavailable topics, reports disclose limited topic coverage,
+and deterministic drafts use neutral wording rather than inferred metadata.
+
 ## Changed files
 
 Implementation and tests:
@@ -51,15 +55,23 @@ Configuration and documentation:
 python3 -m unittest discover -v
 ```
 
-Result: 12 tests passed and the `.env` integration test was skipped because
-dependency installation was not approved in this environment. Airtable HTTP
-behaviour is mocked; tests make no external API calls.
+Result: 16 tests passed and the `.env` integration test was skipped in the
+Codex runtime because `python-dotenv` is not installed there. Airtable HTTP
+behaviour is mocked in the automated suite.
 
 ```bash
 python3 -m src.backend.pipeline --mode export_only --input examples/sample_recent_posts.csv --limit 10
 ```
 
 Result: completed successfully and generated all five expected demo outputs.
+
+```bash
+path/to/venv/bin/python3.11 -m src.backend.pipeline --mode export_only --source airtable --limit 10
+```
+
+Result: stopped before any request because the private `.env` still uses the
+old table/view variable names. Rename them locally to `AIRTABLE_TABLE_ID` and
+`AIRTABLE_VIEW_ID`, then rerun.
 
 ```bash
 env -u AIRTABLE_API_KEY -u AIRTABLE_BASE_ID -u AIRTABLE_TABLE_ID -u AIRTABLE_VIEW_ID \

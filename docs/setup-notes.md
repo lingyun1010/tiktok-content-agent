@@ -52,6 +52,7 @@ canonical names in [`canonical-schema.md`](canonical-schema.md). In particular,
 `duration_seconds` is a required Airtable field and every retrieved record must
 contain a number greater than zero. The adapter retrieves only enough pages to
 satisfy `--limit`. Tests mock the HTTP boundary and do not call Airtable.
+`topic` and `hook` may be absent; the pipeline does not infer them.
 
 ## Environment variables
 
