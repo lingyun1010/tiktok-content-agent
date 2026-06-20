@@ -7,6 +7,10 @@ The sequence is intentional: strengthen the analytics and strategy foundation
 before adding external data sources, model providers, media generation, or
 publishing integrations.
 
+## Roadmap infographic
+
+![Project Roadmap Infographic](./assets/project-roadmap-infographic.png)
+
 ## Status legend
 
 - **Completed** — implemented and verified

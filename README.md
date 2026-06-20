@@ -259,6 +259,13 @@ The default tests must remain independent of paid APIs and repository secrets.
 Private workflow outputs should be stored as protected artifacts or in private
 storage—not committed to this repository.
 
+The phased product plan prioritises stronger analytics and deterministic
+strategy before external APIs, media generation, or publishing integrations.
+
+See the [full project roadmap](docs/roadmap.md) and its
+[roadmap infographic](docs/assets/project-roadmap-infographic.png).
+
+
 ## Portfolio focus
 
 This project demonstrates:
