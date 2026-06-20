@@ -4,7 +4,7 @@
 
 - Python 3.10+
 - A terminal
-- No external accounts, keys, or package installation for the MVP
+- No external accounts, keys, or package installation for the default CSV path
 
 ## Run the sample pipeline
 
@@ -38,18 +38,33 @@ The manual strategy output follows
 [`content-plan-schema.md`](content-plan-schema.md). All generated text is a
 draft and requires human review before publishing.
 
+## Optional Airtable source
+
+The Airtable adapter uses the standard library and is selected explicitly:
+
+```bash
+python3 -m src.backend.pipeline --source airtable --limit 10
+```
+
+The configured table or view must expose fields using the canonical names in
+[`canonical-schema.md`](canonical-schema.md). The adapter retrieves only enough
+pages to satisfy `--limit`. Tests mock the HTTP boundary and do not call
+Airtable.
+
 ## Environment variables
 
-None are required for the sample run. Future integrations may use:
+None are required for the sample CSV run. Airtable variables are required only
+when `--source airtable` is selected:
 
 | Variable | Purpose |
 | --- | --- |
 | `STRATEGY_PROVIDER` | Select `manual`, `openai`, or `deepseek` |
 | `OPENAI_API_KEY` | Future OpenAI provider credential |
 | `DEEPSEEK_API_KEY` | Future DeepSeek provider credential |
-| `AIRTABLE_TOKEN` | Future Airtable access token |
-| `AIRTABLE_BASE_ID` | Future Airtable base identifier |
-| `AIRTABLE_TABLE_NAME` | Future source table name |
+| `AIRTABLE_API_KEY` | Airtable credential sent only in the authorization header |
+| `AIRTABLE_BASE_ID` | Airtable base identifier |
+| `AIRTABLE_TABLE_NAME` | Source table name |
+| `AIRTABLE_VIEW_NAME` | Source view name |
 
 Use `.env.example` as a template. Never place a real value in that committed
 file.
@@ -62,6 +77,8 @@ and does not yet read pipeline output.
 ## Troubleshooting
 
 - Run the command from the repository root so Python can resolve `src`.
+- CSV is the default source and requires `--input`.
+- Airtable requires all four `AIRTABLE_*` variables and omits `--input`.
 - Confirm the CSV header uses the documented field names.
 - Invalid numeric values produce a clear row-specific error.
 - Count fields must be whole numbers and percentage fields must be from 0 to 1.

@@ -93,11 +93,11 @@ def _post_url(record: dict[str, Any], row_number: int) -> str | None:
 
 
 def normalise_post(record: dict[str, Any]) -> TikTokPost:
-    """Convert one CSV row into the canonical TikTok post structure."""
+    """Convert one source record into the canonical TikTok post structure."""
     row_number = int(record.get("_row_number", 0))
     for field in REQUIRED_CSV_FIELDS:
         if field not in record:
-            raise ValueError(f"Input CSV is missing required column '{field}'")
+            raise ValueError(f"Input record is missing required field '{field}'")
     platform = _required_text(record, "platform", row_number).lower()
     if platform != "tiktok":
         raise ValueError(f"Row {row_number}: 'platform' must be 'tiktok'")
@@ -136,9 +136,9 @@ def normalise_post(record: dict[str, Any]) -> TikTokPost:
 
 
 def normalise_posts(records: list[dict[str, Any]]) -> list[TikTokPost]:
-    """Normalise a collection of raw CSV records."""
+    """Normalise a collection of raw source records."""
     posts = [normalise_post(record) for record in records]
     post_ids = [post["post_id"] for post in posts]
     if len(post_ids) != len(set(post_ids)):
-        raise ValueError("Input CSV contains duplicate 'post_id' values")
+        raise ValueError("Input contains duplicate 'post_id' values")
     return posts

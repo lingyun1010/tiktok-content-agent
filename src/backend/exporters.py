@@ -106,9 +106,10 @@ def _group_table(groups: list[dict[str, Any]], label: str) -> list[str]:
 
 
 def build_metrics_markdown(
-    posts: list[dict[str, Any]], summary: dict[str, Any], source_path: Path
+    posts: list[dict[str, Any]], summary: dict[str, Any], source: str | Path
 ) -> str:
     """Render a compact, LLM-ready Markdown performance brief."""
+    source_label = source.as_posix() if isinstance(source, Path) else source
     lines = [
         "# TikTok Metrics Summary",
         "",
@@ -119,7 +120,7 @@ def build_metrics_markdown(
         "",
         "## Dataset overview",
         "",
-        f"- Source: `{source_path.as_posix()}`",
+        f"- Source: `{source_label}`",
         f"- Posts analysed: {summary['post_count']}",
         f"- Total views: {summary['total_views']:,}",
         f"- Average views per post: {summary['average_views']:,.0f}",

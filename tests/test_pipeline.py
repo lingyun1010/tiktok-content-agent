@@ -5,9 +5,13 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from io import BytesIO
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 
+from src.backend.ingest.airtable import AirtableError, load_posts as load_airtable_posts
 from src.backend.metrics import add_metrics, calculate_metrics, summarise_metrics
 from src.backend.normalise import normalise_post, normalise_posts
 from src.backend.pipeline import run_pipeline
@@ -93,6 +97,82 @@ class NormalisationTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "duplicate 'post_id'"):
             normalise_posts([raw, {**raw, "_row_number": 3}])
+
+
+class AirtableIngestionTest(unittest.TestCase):
+    ENVIRONMENT = {
+        "AIRTABLE_API_KEY": "test-secret-key",
+        "AIRTABLE_BASE_ID": "appSynthetic",
+        "AIRTABLE_TABLE_NAME": "TikTok Posts",
+        "AIRTABLE_VIEW_NAME": "Recent Posts",
+    }
+
+    def test_requires_all_airtable_environment_variables_without_values(self) -> None:
+        with self.assertRaises(AirtableError) as context:
+            load_airtable_posts(10, environ={"AIRTABLE_API_KEY": "do-not-print"})
+
+        message = str(context.exception)
+        self.assertIn("AIRTABLE_BASE_ID", message)
+        self.assertIn("AIRTABLE_TABLE_NAME", message)
+        self.assertIn("AIRTABLE_VIEW_NAME", message)
+        self.assertNotIn("do-not-print", message)
+
+    def test_maps_fields_and_paginates_until_limit(self) -> None:
+        responses = [
+            {
+                "records": [
+                    {"id": "recOne", "fields": canonical_post(post_id="one")},
+                    {"id": "recTwo", "fields": canonical_post(post_id="two")},
+                ],
+                "offset": "next-page",
+            },
+            {
+                "records": [
+                    {"id": "recThree", "fields": canonical_post(post_id="three")}
+                ]
+            },
+        ]
+        requests = []
+
+        class FakeResponse:
+            def __init__(self, payload: dict[str, Any]) -> None:
+                self.body = BytesIO(json.dumps(payload).encode("utf-8"))
+
+            def __enter__(self) -> "FakeResponse":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return self.body.read()
+
+        def opener(request: Any, timeout: int) -> FakeResponse:
+            requests.append((request, timeout))
+            return FakeResponse(responses[len(requests) - 1])
+
+        rows = load_airtable_posts(
+            3,
+            environ=self.ENVIRONMENT,
+            opener=opener,
+        )
+
+        self.assertEqual([row["post_id"] for row in rows], ["one", "two", "three"])
+        self.assertEqual(rows[0]["_row_number"], 1)
+        self.assertEqual(rows[0]["views"], 100)
+        self.assertEqual(rows[0]["post_url"], "")
+        self.assertEqual(rows[0]["notes"], "")
+        self.assertEqual(
+            requests[0][0].get_header("Authorization"),
+            "Bearer test-secret-key",
+        )
+        self.assertEqual(requests[0][1], 30)
+        first_query = parse_qs(urlparse(requests[0][0].full_url).query)
+        second_query = parse_qs(urlparse(requests[1][0].full_url).query)
+        self.assertEqual(first_query["view"], ["Recent Posts"])
+        self.assertEqual(first_query["pageSize"], ["3"])
+        self.assertEqual(second_query["offset"], ["next-page"])
+        self.assertEqual(second_query["pageSize"], ["1"])
 
 
 class MetricsTest(unittest.TestCase):
@@ -212,6 +292,34 @@ class MetricsTest(unittest.TestCase):
 
 
 class PipelineTest(unittest.TestCase):
+    def test_airtable_source_uses_canonical_pipeline_without_csv_input(self) -> None:
+        source_post = canonical_post()
+        raw_post = {
+            "_row_number": 1,
+            **{
+                field: "" if value is None else value
+                for field, value in source_post.items()
+            },
+        }
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with patch(
+                "src.backend.pipeline.load_airtable_posts",
+                return_value=[raw_post],
+            ) as loader:
+                paths = run_pipeline(
+                    input_path=None,
+                    limit=1,
+                    provider_name="manual",
+                    output_dir=Path(temporary_directory),
+                    source="airtable",
+                )
+
+            loader.assert_called_once_with(1)
+            self.assertIn(
+                "- Source: `airtable`",
+                paths[0].read_text(encoding="utf-8"),
+            )
+
     def test_manual_strategy_uses_repeat_pause_and_retention_signals(self) -> None:
         posts = calculate_metrics(
             [

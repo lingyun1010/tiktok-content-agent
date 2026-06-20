@@ -4,8 +4,8 @@ An offline-first, AI-ready TikTok content strategy pipeline for small
 direct-to-consumer (DTC) brands.
 
 It turns recent post performance data into transparent metrics, a readable
-summary, and a deterministic manual content plan—without API keys, third-party
-packages, or external calls.
+summary, and a deterministic manual content plan. CSV remains fully offline;
+optional Airtable ingestion is explicitly selected and environment-configured.
 
 ## Why this project exists
 
@@ -23,6 +23,7 @@ The offline MVP is working.
 It currently:
 
 - reads synthetic recent-post data from CSV
+- optionally reads authorised Airtable records using canonical field names
 - validates and normalises a documented canonical TikTok post schema
 - calculates like, comment, share, save, engagement, watch, and optional region metrics
 - compares performance by format and topic
@@ -34,9 +35,9 @@ It currently:
 - reserves provider boundaries for future `openai` and `deepseek` adapters
 - includes a static frontend concept
 - includes an intentionally non-operational TikTok upload placeholder
-- runs without network access or external APIs
+- keeps CSV as the default source with no network access or external APIs
 
-It does not currently connect to Airtable, Apify, TikTok, OpenAI, DeepSeek,
+It does not currently connect to Apify, TikTok, OpenAI, DeepSeek,
 image-generation, or video-generation services.
 
 ## Quick start
@@ -71,6 +72,16 @@ outputs/demo/hashtags.txt
 Generated outputs are deliberately ignored by Git because real runs may contain
 private analytics or brand strategy.
 
+To use Airtable, set the four variables documented in `.env.example`, ensure
+the selected view exposes the canonical field names, then run:
+
+```bash
+python3 -m src.backend.pipeline --source airtable --limit 10
+```
+
+The Airtable source is opt-in and makes a network request. Credentials, base
+identifiers, table names, and view names are not written to generated reports.
+
 ## Example analysis
 
 The synthetic dataset contains 10 fictional posts across formats and topics
@@ -95,10 +106,10 @@ item, and every output requires human review before publishing.
 ## How it works
 
 ```text
-Sample CSV
-    |
-    v
-CSV ingestion
+CSV (default) or Airtable (opt-in)
+              |
+              v
+       Source ingestion
     |
     v
 Record normalisation
@@ -172,7 +183,7 @@ outputs/                  Ignored generated results
 
 The Python backend separates:
 
-- CSV ingestion
+- CSV and optional Airtable ingestion
 - record normalisation
 - metric calculation and aggregation
 - Markdown and JSON export
@@ -231,11 +242,9 @@ This is a public portfolio repository.
 
 ## Configuration
 
-No environment variables are required for the offline MVP.
-
-`.env.example` documents reserved variables for future Airtable and model
-provider integrations. Copy it to `.env` only when implementing those features,
-and never commit the local file.
+No environment variables are required for the default CSV path. Optional
+Airtable ingestion requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`,
+`AIRTABLE_TABLE_NAME`, and `AIRTABLE_VIEW_NAME`. Never commit the local values.
 
 ## Tests
 
@@ -255,7 +264,7 @@ The default tests must remain independent of paid APIs and repository secrets.
 
 ## Roadmap
 
-1. Add optional Airtable and authorised export adapters.
+1. Add further authorised export adapters.
 2. Implement opt-in OpenAI and DeepSeek strategy providers.
 3. Validate structured provider responses.
 4. Expose results through a small backend API.
