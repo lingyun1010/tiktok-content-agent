@@ -184,22 +184,22 @@ model provider.
 
 ## Phase 2 — Rule-based manual strategy mode
 
-**Status: Planned**
+**Status: Completed**
 
 ### Goal
 
 Turn calculated metrics and signals into a useful, deterministic content plan
 without using an LLM.
 
-### Planned work
+### Completed work
 
-- Define a stable `content_plan.json` schema.
-- Replace the fixed stub with a rule-based manual strategy agent.
-- Base recommendations on calculated metrics and Phase 1 signals.
-- Generate reviewable script, caption, and hashtag files.
-- Keep output deterministic and testable.
+- Defined and documented a stable `content_plan.json` schema.
+- Replaced the fixed stub with a rule-based manual strategy agent.
+- Based repeat, pause, and retention recommendations on Phase 1 metrics and signals.
+- Generated reviewable script, caption, and hashtag files from the plan.
+- Kept all output deterministic, offline, and testable.
 
-### Planned deliverables
+### Completed deliverables
 
 ```text
 outputs/demo/content_plan.json
@@ -479,8 +479,8 @@ The planned sequence is:
 ```text
 0. Repository scaffold and offline demo                     Completed
 1. Canonical schema and stronger analytics                  Completed
-2. Rule-based manual strategy mode                          Next milestone
-3. Optional Airtable ingestion                              Planned
+2. Rule-based manual strategy mode                          Completed
+3. Optional Airtable ingestion                              Next milestone
 4. Optional LLM strategy providers                          Planned
 5. Frontend dashboard MVP                                   Planned
 6. GitHub Actions and reproducible checks                   Planned
@@ -490,5 +490,5 @@ The planned sequence is:
 10. Real TikTok draft integration                           Planned
 ```
 
-Phase 1 is complete. Phase 2 is the next milestone; external integrations remain
-deferred until the deterministic manual strategy mode is stable.
+Phases 1 and 2 are complete. Phase 3 is the next milestone; later provider,
+media-generation, and publishing integrations remain deferred.

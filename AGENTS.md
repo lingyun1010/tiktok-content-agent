@@ -112,8 +112,9 @@ The current MVP:
 - compares performance by format and topic
 - assigns deterministic rule-based performance signals
 - writes `outputs/demo/metrics_summary.md`
-- writes `outputs/demo/content_plan_stub.json`
-- generates the plan through the deterministic `manual` provider
+- writes `outputs/demo/content_plan.json`
+- writes `outputs/demo/script.md`, `caption.txt`, and `hashtags.txt`
+- generates a versioned plan and drafts through the deterministic `manual` provider
 - includes reserved interfaces for `openai` and `deepseek`
 - includes a non-operational TikTok upload placeholder
 - includes a static HTML/CSS/JavaScript dashboard concept
@@ -167,8 +168,9 @@ The command must:
 2. Normalise at most 10 records.
 3. Calculate supported metrics safely, including zero-view handling.
 4. Generate `outputs/demo/metrics_summary.md`.
-5. Generate `outputs/demo/content_plan_stub.json`.
-6. Make no network or external API calls.
+5. Generate `outputs/demo/content_plan.json`.
+6. Generate `outputs/demo/script.md`, `caption.txt`, and `hashtags.txt`.
+7. Make no network or external API calls.
 
 If this contract changes, update `README.md`, `docs/setup-notes.md`, and tests
 in the same change.
@@ -307,7 +309,7 @@ In scope:
 - rule-based performance signals
 - format and topic comparisons
 - LLM-ready Markdown metrics summary
-- deterministic JSON content-plan stub
+- deterministic JSON content plan and reviewable text drafts
 - provider interfaces
 - documentation
 - offline tests

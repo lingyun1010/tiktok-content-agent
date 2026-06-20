@@ -35,11 +35,12 @@ examples/sample_recent_posts.csv
 Markdown exporter  strategy_agent
                        |
                        v
-                  manual provider
+            rule-based manual provider
         |              |
         +------+-------+
                v
-          outputs/demo/
+ metrics summary, plan, script,
+    caption, and hashtags
 ```
 
 ## Backend modules
@@ -49,15 +50,16 @@ Markdown exporter  strategy_agent
 - `csv_source.py`: local CSV ingestion and required-header validation.
 - `normalise.py`: conversion from string records to a typed internal shape.
 - `metrics.py`: per-post calculations, signals, rankings, and grouped summaries.
-- `exporters.py`: Markdown and JSON file writing.
-- `strategy_agent.py`: provider interface and manual implementation.
+- `exporters.py`: metrics, plan, script, caption, and hashtag rendering/writing.
+- `strategy_agent.py`: provider interface and deterministic manual rules.
 - `tiktok_uploader.py`: explicit non-operational placeholder.
 
 ## Provider adapters
 
 The `StrategyAgent` interface supports three provider names:
 
-- `manual`: implemented; creates deterministic recommendations from metrics.
+- `manual`: implemented; converts metrics and signals into a deterministic,
+  human-reviewable plan and text drafts.
 - `openai`: reserved; raises a clear not-implemented error.
 - `deepseek`: reserved; raises a clear not-implemented error.
 
@@ -75,6 +77,17 @@ wrong-region distribution.
 The region match score uses only the top observed region and its view share.
 It is explicitly a proxy until a future authorised source provides a complete
 regional distribution.
+
+## Strategy and export boundary
+
+The manual provider receives enriched posts plus the Phase 1 summary. It
+selects the strongest repeat candidate, records all pause candidates, and adds
+shorter-edit guidance when watch ratio is below 50%. It returns the versioned
+schema documented in [`content-plan-schema.md`](content-plan-schema.md).
+
+`pipeline.py` writes `content_plan.json`, then renders `script.md`,
+`caption.txt`, and `hashtags.txt` from that same plan. The pipeline does not
+upload, schedule, or publish any output.
 
 ## Security model
 

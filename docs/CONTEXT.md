@@ -30,8 +30,9 @@ The intended workflow helps a founder or marketer explore questions such as:
 - What script, caption, and hashtags could support that concept?
 
 The MVP answers the descriptive metrics portion, adds deterministic testing
-signals, and produces a recommendation stub. Rich strategy and asset
-generation remain future, optional capabilities.
+signals, and produces a rule-based content plan with reviewable text drafts.
+Provider-backed strategy and media generation remain future, optional
+capabilities.
 
 ## Current MVP workflow
 
@@ -49,7 +50,7 @@ Per-post metric calculation
         +-------------------+
         |                   |
         v                   v
-Markdown summary     Manual strategy stub
+Markdown summary     Manual strategy rules
         |                   |
         +---------+---------+
                   v
@@ -138,8 +139,9 @@ It may eventually generate:
 The provider should receive a compact structured summary instead of unrestricted
 raw files. Provider output must be validated and reviewed by a human.
 
-The MVP does not call a real LLM. Its `manual` provider generates a deterministic
-stub so the complete local pipeline remains testable without credentials.
+The MVP does not call a real LLM. Its `manual` provider uses deterministic
+rules to generate the plan, script, caption, and hashtags so the complete local
+pipeline remains testable without credentials.
 
 ## Data source assumptions
 
