@@ -4,7 +4,8 @@
 
 - Python 3.10+
 - A terminal
-- No external accounts, keys, or package installation for the default CSV path
+- Install dependencies with `python3 -m pip install -r requirements.txt`
+- No external accounts or keys for the default CSV path
 
 ## Run the sample pipeline
 
@@ -46,10 +47,11 @@ The Airtable adapter uses the standard library and is selected explicitly:
 python3 -m src.backend.pipeline --source airtable --limit 10
 ```
 
-The configured table or view must expose fields using the canonical names in
-[`canonical-schema.md`](canonical-schema.md). The adapter retrieves only enough
-pages to satisfy `--limit`. Tests mock the HTTP boundary and do not call
-Airtable.
+The configured table and view must expose fields using the exact, case-sensitive
+canonical names in [`canonical-schema.md`](canonical-schema.md). In particular,
+`duration_seconds` is a required Airtable field and every retrieved record must
+contain a number greater than zero. The adapter retrieves only enough pages to
+satisfy `--limit`. Tests mock the HTTP boundary and do not call Airtable.
 
 ## Environment variables
 
@@ -63,11 +65,13 @@ when `--source airtable` is selected:
 | `DEEPSEEK_API_KEY` | Future DeepSeek provider credential |
 | `AIRTABLE_API_KEY` | Airtable credential sent only in the authorization header |
 | `AIRTABLE_BASE_ID` | Airtable base identifier |
-| `AIRTABLE_TABLE_NAME` | Source table name |
-| `AIRTABLE_VIEW_NAME` | Source view name |
+| `AIRTABLE_TABLE_ID` | Airtable table ID beginning with `tbl` |
+| `AIRTABLE_VIEW_ID` | Airtable view ID beginning with `viw` |
 
-Use `.env.example` as a template. Never place a real value in that committed
-file.
+Copy `.env.example` to `.env` for local development, replace only the required
+placeholder values, and run commands from the repository root. The pipeline
+loads the local `.env` without overriding variables already exported by the
+shell. `.env` is ignored by Git; keep `.env.example` limited to placeholders.
 
 ## Frontend preview
 
@@ -79,6 +83,8 @@ and does not yet read pipeline output.
 - Run the command from the repository root so Python can resolve `src`.
 - CSV is the default source and requires `--input`.
 - Airtable requires all four `AIRTABLE_*` variables and omits `--input`.
+- Rename older local variables from `AIRTABLE_TABLE_NAME` and
+  `AIRTABLE_VIEW_NAME` to `AIRTABLE_TABLE_ID` and `AIRTABLE_VIEW_ID`.
 - Confirm the CSV header uses the documented field names.
 - Invalid numeric values produce a clear row-specific error.
 - Count fields must be whole numbers and percentage fields must be from 0 to 1.

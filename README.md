@@ -244,7 +244,7 @@ This is a public portfolio repository.
 
 No environment variables are required for the default CSV path. Optional
 Airtable ingestion requires `AIRTABLE_API_KEY`, `AIRTABLE_BASE_ID`,
-`AIRTABLE_TABLE_NAME`, and `AIRTABLE_VIEW_NAME`. Never commit the local values.
+`AIRTABLE_TABLE_ID`, and `AIRTABLE_VIEW_ID`. Never commit the local values.
 
 ## Tests
 

@@ -38,6 +38,27 @@ Blank optional values remain `None`; the pipeline does not invent them.
 Duplicate post IDs, invalid timestamps, fractional count fields, invalid URLs,
 and out-of-range percentages are rejected.
 
+## Airtable field setup
+
+The selected Airtable view must expose field names exactly as written above.
+Airtable's own record ID is not used as `post_id`; create a `post_id` field in
+the table.
+
+Recommended Airtable field types:
+
+- Single line text: `post_id`, `platform`, `format`, `topic`, `hook`,
+  `caption`, `top_region`, `target_region`, `notes`
+- URL: `post_url`
+- Date with time: `published_at`
+- Number: `duration_seconds`, `views`, `likes`, `comments`, `shares`, `saves`,
+  `average_watch_time_seconds`, `completion_rate`,
+  `top_region_view_percentage`
+
+Use decimal fractions from 0 to 1 for percentage fields, for example `0.75`
+rather than `75`. Required numeric fields must not be blank. Every record
+returned by the configured view is validated, so use a filtered view if draft
+or incomplete rows exist in the same table.
+
 ## Calculated fields
 
 Rates use views as their denominator:

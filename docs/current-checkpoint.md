@@ -23,6 +23,9 @@ The Airtable adapter reads configuration only from environment variables, maps
 canonical field names, paginates up to `--limit`, and does not expose secrets
 or private Airtable identifiers in generated reports.
 
+Local development now loads those variables from an ignored repository-root
+`.env` file through `python-dotenv`. Existing shell variables take precedence.
+
 ## Changed files
 
 Implementation and tests:
@@ -33,6 +36,7 @@ Implementation and tests:
 - `src/backend/exporters.py`
 - `src/backend/normalise.py`
 - `tests/test_pipeline.py`
+- `requirements.txt`
 
 Configuration and documentation:
 
@@ -47,8 +51,9 @@ Configuration and documentation:
 python3 -m unittest discover -v
 ```
 
-Result: 12 tests passed. Airtable HTTP behaviour is mocked; tests make no
-external API calls.
+Result: 12 tests passed and the `.env` integration test was skipped because
+dependency installation was not approved in this environment. Airtable HTTP
+behaviour is mocked; tests make no external API calls.
 
 ```bash
 python3 -m src.backend.pipeline --mode export_only --input examples/sample_recent_posts.csv --limit 10
@@ -57,7 +62,7 @@ python3 -m src.backend.pipeline --mode export_only --input examples/sample_recen
 Result: completed successfully and generated all five expected demo outputs.
 
 ```bash
-env -u AIRTABLE_API_KEY -u AIRTABLE_BASE_ID -u AIRTABLE_TABLE_NAME -u AIRTABLE_VIEW_NAME \
+env -u AIRTABLE_API_KEY -u AIRTABLE_BASE_ID -u AIRTABLE_TABLE_ID -u AIRTABLE_VIEW_ID \
   python3 -m src.backend.pipeline --source airtable --limit 1
 ```
 
@@ -91,6 +96,7 @@ These paths remain ignored by Git.
   data were used.
 - Airtable fields must use the canonical names documented in
   `docs/canonical-schema.md`.
+- Airtable configuration uses stable table (`tbl...`) and view (`viw...`) IDs.
 - Airtable is opt-in and requires network access plus all four `AIRTABLE_*`
   environment variables.
 - No OpenAI, DeepSeek, media generation, TikTok upload, scheduling, or

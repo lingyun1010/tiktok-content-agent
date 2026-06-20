@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import importlib.util
+import os
 import tempfile
 import unittest
 from io import BytesIO
@@ -11,7 +13,11 @@ from typing import Any
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
 
-from src.backend.ingest.airtable import AirtableError, load_posts as load_airtable_posts
+from src.backend.ingest.airtable import (
+    AirtableConfig,
+    AirtableError,
+    load_posts as load_airtable_posts,
+)
 from src.backend.metrics import add_metrics, calculate_metrics, summarise_metrics
 from src.backend.normalise import normalise_post, normalise_posts
 from src.backend.pipeline import run_pipeline
@@ -103,8 +109,8 @@ class AirtableIngestionTest(unittest.TestCase):
     ENVIRONMENT = {
         "AIRTABLE_API_KEY": "test-secret-key",
         "AIRTABLE_BASE_ID": "appSynthetic",
-        "AIRTABLE_TABLE_NAME": "TikTok Posts",
-        "AIRTABLE_VIEW_NAME": "Recent Posts",
+        "AIRTABLE_TABLE_ID": "tblSynthetic",
+        "AIRTABLE_VIEW_ID": "viwSynthetic",
     }
 
     def test_requires_all_airtable_environment_variables_without_values(self) -> None:
@@ -113,9 +119,29 @@ class AirtableIngestionTest(unittest.TestCase):
 
         message = str(context.exception)
         self.assertIn("AIRTABLE_BASE_ID", message)
-        self.assertIn("AIRTABLE_TABLE_NAME", message)
-        self.assertIn("AIRTABLE_VIEW_NAME", message)
+        self.assertIn("AIRTABLE_TABLE_ID", message)
+        self.assertIn("AIRTABLE_VIEW_ID", message)
         self.assertNotIn("do-not-print", message)
+
+    @unittest.skipUnless(
+        importlib.util.find_spec("dotenv"),
+        "python-dotenv is not installed",
+    )
+    def test_loads_airtable_configuration_from_local_dotenv(self) -> None:
+        dotenv_content = "\n".join(
+            f"{name}={value}" for name, value in self.ENVIRONMENT.items()
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            dotenv_path = Path(temporary_directory) / ".env"
+            dotenv_path.write_text(dotenv_content, encoding="utf-8")
+            with patch.dict(os.environ, {}, clear=True):
+                with patch("pathlib.Path.cwd", return_value=Path(temporary_directory)):
+                    config = AirtableConfig.from_environment()
+
+        self.assertEqual(config.api_key, "test-secret-key")
+        self.assertEqual(config.base_id, "appSynthetic")
+        self.assertEqual(config.table_id, "tblSynthetic")
+        self.assertEqual(config.view_id, "viwSynthetic")
 
     def test_maps_fields_and_paginates_until_limit(self) -> None:
         responses = [
@@ -169,7 +195,7 @@ class AirtableIngestionTest(unittest.TestCase):
         self.assertEqual(requests[0][1], 30)
         first_query = parse_qs(urlparse(requests[0][0].full_url).query)
         second_query = parse_qs(urlparse(requests[1][0].full_url).query)
-        self.assertEqual(first_query["view"], ["Recent Posts"])
+        self.assertEqual(first_query["view"], ["viwSynthetic"])
         self.assertEqual(first_query["pageSize"], ["3"])
         self.assertEqual(second_query["offset"], ["next-page"])
         self.assertEqual(second_query["pageSize"], ["1"])
