@@ -1,0 +1,12 @@
+post_id,posted_at,caption,views,likes,comments,shares,saves,duration_seconds,average_watch_time_seconds,content_pillar,hook
+demo-001,2026-05-02T10:00:00Z,"Three ways to make wash day feel easier",12500,1130,54,96,188,24,17.5,Education,"Wash day should not take your whole afternoon"
+demo-002,2026-05-05T09:30:00Z,"A founder explains why the formula starts with herbs",8900,712,42,71,104,31,19.2,Founder story,"We rejected the first twelve versions"
+demo-003,2026-05-08T12:15:00Z,"Texture close-up and a simple application routine",18300,1654,63,149,267,18,14.8,Product ritual,"Watch what happens when water hits it"
+demo-004,2026-05-11T08:45:00Z,"The most common mistake when applying scalp oil",22100,2077,118,244,351,27,22.4,Education,"You may be using too much"
+demo-005,2026-05-14T11:20:00Z,"Packing a real customer order behind the scenes",6400,493,29,38,,20,12.1,Behind the scenes,"Come pack today's first order with us"
+demo-006,2026-05-17T14:00:00Z,"One product three different hair routines",15100,1260,77,121,214,35,24.7,Product ritual,"Your routine should match your week"
+demo-007,2026-05-20T10:40:00Z,"Answering a customer question about consistency",9700,801,61,83,132,29,20.6,Community,"You asked if texture changes the result"
+demo-008,2026-05-23T13:10:00Z,"A quiet Sunday reset routine",11200,924,38,75,146,22,16.9,Lifestyle,"A slower routine for a noisy week"
+demo-009,2026-05-26T09:05:00Z,"Why more foam does not always mean a better cleanse",20400,1915,102,209,318,26,21.8,Education,"Foam is not the same thing as clean"
+demo-010,2026-05-29T15:25:00Z,"From ingredient shelf to finished bottle",13400,1058,48,92,173,32,20.2,Behind the scenes,"This bottle starts here"
+
