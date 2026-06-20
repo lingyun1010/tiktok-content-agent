@@ -27,7 +27,7 @@ class ManualStrategyProvider:
         self, posts: list[dict[str, Any]], summary: dict[str, Any]
     ) -> dict[str, Any]:
         top_post = summary.get("top_post") or {}
-        strongest_pillar = top_post.get("content_pillar") or "best-performing theme"
+        strongest_topic = top_post.get("topic") or "best-performing theme"
         strongest_hook = top_post.get("hook") or "a clear problem-first hook"
 
         return {
@@ -41,8 +41,8 @@ class ManualStrategyProvider:
             "recommendations": [
                 {
                     "priority": 1,
-                    "idea": f"Create a follow-up around {strongest_pillar}.",
-                    "reason": "This pillar appears in the highest-engagement sample post.",
+                    "idea": f"Create a follow-up around {strongest_topic}.",
+                    "reason": "This topic appears in the highest-engagement sample post.",
                 },
                 {
                     "priority": 2,
@@ -58,7 +58,7 @@ class ManualStrategyProvider:
             "content_items": [
                 {
                     "working_title": "Winning theme, new angle",
-                    "content_pillar": strongest_pillar,
+                    "content_pillar": strongest_topic,
                     "script": None,
                     "caption": None,
                     "hashtags": [],
@@ -85,4 +85,3 @@ def get_strategy_provider(provider_name: str) -> StrategyProvider:
         f"Unknown provider '{provider_name}'. "
         f"Choose one of: {', '.join(SUPPORTED_PROVIDERS)}"
     )
-

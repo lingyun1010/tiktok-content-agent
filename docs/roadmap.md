@@ -63,21 +63,21 @@ without credentials, dependencies, network access, or external API calls.
 
 ## Phase 1 — Canonical schema and stronger analytics
 
-**Status: Next milestone**
+**Status: Completed**
 
 ### Goal
 
 Move the backend from a runnable demo to an engineering-credible analytics MVP
 before introducing any external API.
 
-### Planned work
+### Completed work
 
 #### 1. Canonical TikTok post schema
 
 Define one internal record shape that all current and future data sources must
 map into.
 
-Candidate fields:
+Implemented fields:
 
 ```text
 post_id
@@ -97,7 +97,8 @@ saves
 average_watch_time_seconds
 completion_rate
 top_region
-target_region_match
+target_region
+top_region_view_percentage
 notes
 ```
 
@@ -115,17 +116,15 @@ Retain and validate:
 - engagement rate
 - average watch ratio
 
-Add when supported by the canonical schema:
+Added through the canonical schema:
 
-- completion score
 - region match score
 - format-level comparisons
 - topic-level comparisons
-- hook-level comparisons
 
 #### 3. Rule-based performance signals
 
-Add deterministic, explainable classifications such as:
+Added deterministic, explainable classifications:
 
 - `high_view_low_engagement`
 - `low_view_high_save`
@@ -139,8 +138,7 @@ as causal findings.
 
 #### 4. LLM-ready metrics summary
 
-Evolve `metrics_summary.md` into a compact strategy input with sections such
-as:
+Evolved `metrics_summary.md` into a compact strategy input with:
 
 ```text
 Dataset overview
@@ -148,10 +146,9 @@ Top-performing posts
 Weak-performing posts
 Format performance
 Topic performance
-Hook performance
 Audience region notes
 Signals for next content
-Machine-readable notes
+Per-post metric appendix
 ```
 
 The summary should reduce the need to send raw private records to a future
@@ -481,8 +478,8 @@ The planned sequence is:
 
 ```text
 0. Repository scaffold and offline demo                     Completed
-1. Canonical schema and stronger analytics                  Next milestone
-2. Rule-based manual strategy mode                          Planned
+1. Canonical schema and stronger analytics                  Completed
+2. Rule-based manual strategy mode                          Next milestone
 3. Optional Airtable ingestion                              Planned
 4. Optional LLM strategy providers                          Planned
 5. Frontend dashboard MVP                                   Planned
@@ -493,6 +490,5 @@ The planned sequence is:
 10. Real TikTok draft integration                           Planned
 ```
 
-Phase 1 is the only active next milestone. Later phases should not begin until
-its canonical schema, analytics, report structure, tests, and documentation
-meet the stated exit criteria.
+Phase 1 is complete. Phase 2 is the next milestone; external integrations remain
+deferred until the deterministic manual strategy mode is stable.

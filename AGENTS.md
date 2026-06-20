@@ -36,6 +36,29 @@ Use these files as the primary guides:
 When code and documentation disagree, verify the implementation and update the
 stale documentation in the same change.
 
+## Checkpoint and Handoff Requirement
+
+Treat `docs/current-checkpoint.md` as the handoff document for future Codex
+sessions and human developers.
+
+At the end of every meaningful task, update `docs/current-checkpoint.md` before
+summarising or handing control back.
+
+If a task is becoming long, update the checkpoint before making further
+changes. Also update it before pausing work, after completing a phase, or before
+a long-running session may lose context.
+
+Each checkpoint update should record, as applicable:
+
+- current phase
+- changed files
+- verified commands
+- generated outputs
+- known issues
+- next recommended task
+
+Do not rely on chat history as the only record of project state.
+
 ## Public Repository Rules
 
 This is a public GitHub repository.
@@ -84,8 +107,10 @@ directories.
 The current MVP:
 
 - reads a local sample CSV
-- normalises recent TikTok post records
-- calculates like, comment, share, save, engagement, and watch metrics
+- validates and normalises canonical TikTok post records
+- calculates like, comment, share, save, engagement, watch, and optional region metrics
+- compares performance by format and topic
+- assigns deterministic rule-based performance signals
 - writes `outputs/demo/metrics_summary.md`
 - writes `outputs/demo/content_plan_stub.json`
 - generates the plan through the deterministic `manual` provider
@@ -159,6 +184,9 @@ Use views as the denominator for rate metrics:
 - `engagement_rate = (likes + comments + shares + available saves) / views`
 - `average_watch_ratio = average_watch_time_seconds / duration_seconds`, only
   when both values are available and duration is greater than zero
+- `region_match_score = top_region_view_percentage` when top and target regions
+  match; otherwise `1 - top_region_view_percentage`, only when all region fields
+  are available
 
 When views are zero, return zero-valued rate metrics rather than raising a
 division error. Do not silently invent missing values.
@@ -274,9 +302,11 @@ Before declaring a change complete:
 In scope:
 
 - sample CSV ingestion
-- record normalisation
+- canonical record validation and normalisation
 - metric calculation
-- Markdown metrics summary
+- rule-based performance signals
+- format and topic comparisons
+- LLM-ready Markdown metrics summary
 - deterministic JSON content-plan stub
 - provider interfaces
 - documentation
@@ -296,4 +326,3 @@ Out of scope:
 
 Future work must preserve the offline sample path even after optional external
 integrations are added.
-
