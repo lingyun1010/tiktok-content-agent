@@ -36,6 +36,29 @@ Use these files as the primary guides:
 When code and documentation disagree, verify the implementation and update the
 stale documentation in the same change.
 
+## Checkpoint and Handoff Requirement
+
+Treat `docs/current-checkpoint.md` as the handoff document for future Codex
+sessions and human developers.
+
+At the end of every meaningful task, update `docs/current-checkpoint.md` before
+summarising or handing control back.
+
+If a task is becoming long, update the checkpoint before making further
+changes. Also update it before pausing work, after completing a phase, or before
+a long-running session may lose context.
+
+Each checkpoint update should record, as applicable:
+
+- current phase
+- changed files
+- verified commands
+- generated outputs
+- known issues
+- next recommended task
+
+Do not rely on chat history as the only record of project state.
+
 ## Public Repository Rules
 
 This is a public GitHub repository.

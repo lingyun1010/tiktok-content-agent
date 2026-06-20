@@ -146,6 +146,7 @@ thresholds are documented in
 AGENTS.md                 Coding-agent project rules
 README.md                 Public project overview
 docs/
+  current-checkpoint.md    Latest verified state and safe continuation notes
   project-brief.md        Product goal, users, scope, and non-goals
   CONTEXT.md              Business context and operating assumptions
   architecture.md         Data flow, boundaries, and security model
