@@ -4,7 +4,7 @@ An offline-first, AI-ready TikTok content strategy pipeline for small
 direct-to-consumer (DTC) brands.
 
 It turns recent post performance data into transparent metrics, a readable
-summary, and a deterministic content-plan stub—without API keys, third-party
+summary, and a deterministic manual content plan—without API keys, third-party
 packages, or external calls.
 
 ## Why this project exists
@@ -28,8 +28,9 @@ It currently:
 - compares performance by format and topic
 - assigns six deterministic, explainable performance signals
 - exports `outputs/demo/metrics_summary.md`
-- exports `outputs/demo/content_plan_stub.json`
-- generates the content-plan stub through a deterministic `manual` provider
+- exports a versioned `outputs/demo/content_plan.json`
+- exports reviewable `script.md`, `caption.txt`, and `hashtags.txt` drafts
+- generates strategy through deterministic rules in the `manual` provider
 - reserves provider boundaries for future `openai` and `deepseek` adapters
 - includes a static frontend concept
 - includes an intentionally non-operational TikTok upload placeholder
@@ -61,7 +62,10 @@ Expected generated files:
 
 ```text
 outputs/demo/metrics_summary.md
-outputs/demo/content_plan_stub.json
+outputs/demo/content_plan.json
+outputs/demo/script.md
+outputs/demo/caption.txt
+outputs/demo/hashtags.txt
 ```
 
 Generated outputs are deliberately ignored by Git because real runs may contain
@@ -84,8 +88,9 @@ The generated Markdown report includes:
 - deterministic signals and next-test guidance
 - a per-post metric appendix
 
-The JSON file contains a reviewable strategy stub and records that no LLM was
-called.
+The JSON file records the metrics and signals behind repeat, pause, and
+retention decisions. The text files are rendered from the selected content
+item, and every output requires human review before publishing.
 
 ## How it works
 
@@ -105,7 +110,7 @@ Metrics calculation
     |                     |
     v                     v
 Metrics summary     Strategy provider
-  Markdown           manual today
+  Markdown          rule-based manual
     |                     |
     +----------+----------+
                v
@@ -174,9 +179,12 @@ The Python backend separates:
 - provider selection and strategy generation
 - future publishing boundaries
 
-The current `manual` provider is deterministic. Selecting `openai` or
-`deepseek` produces a clear not-implemented error rather than making an
-unexpected network call.
+The current `manual` provider deterministically selects a repeat candidate,
+records pause and retention guidance, and drafts one script, caption, and
+hashtag set. Its stable output is documented in
+[`docs/content-plan-schema.md`](docs/content-plan-schema.md). Selecting
+`openai` or `deepseek` produces a clear not-implemented error rather than
+making an unexpected network call.
 
 ## Frontend
 
@@ -247,14 +255,13 @@ The default tests must remain independent of paid APIs and repository secrets.
 
 ## Roadmap
 
-1. Build the deterministic Phase 2 strategy plan from Phase 1 signals.
-2. Add Airtable and authorised export adapters.
-3. Implement opt-in OpenAI and DeepSeek strategy providers.
-4. Validate structured provider responses.
-5. Expose results through a small backend API.
-6. Connect the dashboard to generated data.
-7. Add GitHub Actions for offline tests, JSON validation, and secret scanning.
-8. Design a separate, human-reviewed TikTok draft workflow.
+1. Add optional Airtable and authorised export adapters.
+2. Implement opt-in OpenAI and DeepSeek strategy providers.
+3. Validate structured provider responses.
+4. Expose results through a small backend API.
+5. Connect the dashboard to generated data.
+6. Add GitHub Actions for offline tests, JSON validation, and secret scanning.
+7. Design a separate, human-reviewed TikTok draft workflow.
 
 Private workflow outputs should be stored as protected artifacts or in private
 storage—not committed to this repository.

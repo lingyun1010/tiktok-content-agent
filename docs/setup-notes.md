@@ -21,7 +21,10 @@ The command creates:
 
 ```text
 outputs/demo/metrics_summary.md
-outputs/demo/content_plan_stub.json
+outputs/demo/content_plan.json
+outputs/demo/script.md
+outputs/demo/caption.txt
+outputs/demo/hashtags.txt
 ```
 
 The `outputs/` directory is intentionally ignored because real generated
@@ -30,6 +33,10 @@ content may reveal private performance data or brand strategy.
 The input must use the canonical columns documented in
 [`canonical-schema.md`](canonical-schema.md). The committed sample contains
 only fictional records.
+
+The manual strategy output follows
+[`content-plan-schema.md`](content-plan-schema.md). All generated text is a
+draft and requires human review before publishing.
 
 ## Environment variables
 

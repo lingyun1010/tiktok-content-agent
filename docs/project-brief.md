@@ -55,7 +55,8 @@ The MVP:
 - calculates per-post engagement, watch, and optional region metrics
 - compares formats and topics and assigns deterministic rule-based signals
 - produces an LLM-ready Markdown metrics report
-- produces a deterministic JSON content-plan stub without an LLM
+- produces a deterministic JSON content plan without an LLM
+- produces a reviewable script, caption, and hashtag set from the same plan
 - defines a clean boundary for manual, OpenAI, and DeepSeek providers
 - includes an intentionally minimal static frontend concept
 - runs locally without credentials, network access, or external services
@@ -66,7 +67,7 @@ After running the sample command, a user receives:
 
 - a concise overview of total views and average performance
 - ranked post, format, topic, region, and rule-based signal summaries
-- a deterministic content recommendation stub for human review
+- a deterministic content plan and text drafts for human review
 
 The output is descriptive rather than predictive. It does not claim that a
 particular creative element caused performance or guarantee future results.

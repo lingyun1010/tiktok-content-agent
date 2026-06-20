@@ -1,4 +1,4 @@
-"""Offline tests for the Phase 1 content analytics pipeline."""
+"""Offline tests for analytics and deterministic manual strategy generation."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from src.backend.metrics import add_metrics, calculate_metrics, summarise_metric
 from src.backend.normalise import normalise_post, normalise_posts
 from src.backend.pipeline import run_pipeline
 from src.backend.schema import CANONICAL_CSV_FIELDS
+from src.backend.strategy_agent import ManualStrategyProvider
 
 
 def canonical_post(**overrides: Any) -> dict[str, Any]:
@@ -211,10 +212,62 @@ class MetricsTest(unittest.TestCase):
 
 
 class PipelineTest(unittest.TestCase):
-    def test_sample_pipeline_generates_llm_ready_markdown_and_json(self) -> None:
+    def test_manual_strategy_uses_repeat_pause_and_retention_signals(self) -> None:
+        posts = calculate_metrics(
+            [
+                canonical_post(
+                    post_id="repeat",
+                    format="Product demo",
+                    topic="Routine",
+                    hook="Try this instead",
+                    views=500,
+                    likes=100,
+                    comments=10,
+                    shares=10,
+                    saves=20,
+                    average_watch_time_seconds=16,
+                ),
+                canonical_post(
+                    post_id="pause",
+                    format="Montage",
+                    topic="Lifestyle",
+                    views=100,
+                    likes=2,
+                    comments=0,
+                    shares=0,
+                    saves=0,
+                    average_watch_time_seconds=4,
+                ),
+            ]
+        )
+        summary = summarise_metrics(posts)
+
+        plan = ManualStrategyProvider().generate_plan(posts, summary)
+
+        self.assertEqual(plan["schema_version"], "1.0")
+        self.assertEqual(plan["status"], "draft_for_human_review")
+        self.assertTrue(plan["human_review_required"])
+        self.assertEqual(
+            plan["analysis_basis"]["repeat_candidate_post_ids"], ["repeat"]
+        )
+        self.assertEqual(
+            plan["analysis_basis"]["pause_candidate_post_ids"], ["pause"]
+        )
+        self.assertEqual(plan["strategy"]["repeat"]["source_post_id"], "repeat")
+        self.assertTrue(plan["strategy"]["retention_adjustment"]["required"])
+        self.assertEqual(plan["content_item"]["source_post_id"], "repeat")
+        self.assertIn("before publishing", plan["content_item"]["review_checks"][-1])
+
+    def test_sample_pipeline_generates_all_phase_2_outputs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             output_dir = Path(temporary_directory)
-            metrics_path, plan_path = run_pipeline(
+            (
+                metrics_path,
+                plan_path,
+                script_path,
+                caption_path,
+                hashtags_path,
+            ) = run_pipeline(
                 input_path=Path("examples/sample_recent_posts.csv"),
                 limit=10,
                 provider_name="manual",
@@ -235,26 +288,36 @@ class PipelineTest(unittest.TestCase):
             self.assertIn("Posts analysed: 10", markdown)
 
             plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            self.assertEqual(plan_path.name, "content_plan.json")
+            self.assertEqual(plan["schema_version"], "1.0")
             self.assertEqual(plan["provider"], "manual")
             self.assertFalse(plan["llm_called"])
+            self.assertTrue(plan["human_review_required"])
+            self.assertTrue(plan["analysis_basis"]["repeat_candidate_post_ids"])
+            self.assertIn("## Review checks", script_path.read_text(encoding="utf-8"))
+            self.assertTrue(caption_path.read_text(encoding="utf-8").strip())
+            hashtags = hashtags_path.read_text(encoding="utf-8").strip()
+            self.assertTrue(hashtags.startswith("#"))
+            self.assertIn(" ", hashtags)
 
-    def test_content_plan_stub_is_deterministic(self) -> None:
+    def test_phase_2_outputs_are_deterministic(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             base = Path(temporary_directory)
-            _, first_path = run_pipeline(
+            first_paths = run_pipeline(
                 Path("examples/sample_recent_posts.csv"),
                 10,
                 "manual",
                 base / "first",
             )
-            _, second_path = run_pipeline(
+            second_paths = run_pipeline(
                 Path("examples/sample_recent_posts.csv"),
                 10,
                 "manual",
                 base / "second",
             )
 
-            self.assertEqual(first_path.read_bytes(), second_path.read_bytes())
+            for first_path, second_path in zip(first_paths, second_paths):
+                self.assertEqual(first_path.read_bytes(), second_path.read_bytes())
 
 
 if __name__ == "__main__":
