@@ -27,6 +27,10 @@ outputs/demo/content_plan_stub.json
 The `outputs/` directory is intentionally ignored because real generated
 content may reveal private performance data or brand strategy.
 
+The input must use the canonical columns documented in
+[`canonical-schema.md`](canonical-schema.md). The committed sample contains
+only fictional records.
+
 ## Environment variables
 
 None are required for the sample run. Future integrations may use:
@@ -53,6 +57,9 @@ and does not yet read pipeline output.
 - Run the command from the repository root so Python can resolve `src`.
 - Confirm the CSV header uses the documented field names.
 - Invalid numeric values produce a clear row-specific error.
+- Count fields must be whole numbers and percentage fields must be from 0 to 1.
+- `published_at` must be an ISO 8601 datetime and duration must be greater than zero.
+- Duplicate post IDs are rejected.
 - A zero-view post is accepted and receives zero-valued rate metrics.
 
 ## Future GitHub Actions plan

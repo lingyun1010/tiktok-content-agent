@@ -50,10 +50,11 @@ sample data.
 The MVP:
 
 - accepts a local CSV containing recent TikTok post records
-- normalises core numeric and descriptive fields
+- validates and normalises a canonical TikTok post schema
 - limits analysis to the requested number of recent records
-- calculates per-post engagement and watch metrics
-- produces a readable Markdown metrics report
+- calculates per-post engagement, watch, and optional region metrics
+- compares formats and topics and assigns deterministic rule-based signals
+- produces an LLM-ready Markdown metrics report
 - produces a deterministic JSON content-plan stub without an LLM
 - defines a clean boundary for manual, OpenAI, and DeepSeek providers
 - includes an intentionally minimal static frontend concept
@@ -64,8 +65,7 @@ The MVP:
 After running the sample command, a user receives:
 
 - a concise overview of total views and average performance
-- comparable per-post rate metrics
-- the strongest engagement signal in the analysed sample
+- ranked post, format, topic, region, and rule-based signal summaries
 - a deterministic content recommendation stub for human review
 
 The output is descriptive rather than predictive. It does not claim that a
@@ -87,7 +87,7 @@ Potential future iterations may include:
 
 - Airtable ingestion through a data-source adapter
 - authorised export ingestion from other sources
-- richer trend and content-pillar analysis
+- richer trend and hook-level analysis
 - opt-in OpenAI or DeepSeek strategy generation
 - image and video prompt generation
 - a small backend API
@@ -110,4 +110,3 @@ The MVP does not:
 - prove causation or predict guaranteed performance
 - include a production database, user-account system, or polished application
 - run as a long-lived autonomous coding-agent session
-

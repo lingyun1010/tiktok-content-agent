@@ -24,7 +24,10 @@ examples/sample_recent_posts.csv
        normalise.normalise_post
                |
                v
-         metrics.add_metrics
+       canonical TikTok record
+               |
+               v
+    metrics + rule-based signals
                |
         +------+-------+
         |              |
@@ -42,9 +45,10 @@ Markdown exporter  strategy_agent
 ## Backend modules
 
 - `pipeline.py`: command-line orchestration and output paths.
-- `csv_source.py`: local CSV ingestion.
+- `schema.py`: canonical field definitions shared by current and future sources.
+- `csv_source.py`: local CSV ingestion and required-header validation.
 - `normalise.py`: conversion from string records to a typed internal shape.
-- `metrics.py`: per-post calculations and aggregate summaries.
+- `metrics.py`: per-post calculations, signals, rankings, and grouped summaries.
 - `exporters.py`: Markdown and JSON file writing.
 - `strategy_agent.py`: provider interface and manual implementation.
 - `tiktok_uploader.py`: explicit non-operational placeholder.
@@ -60,6 +64,17 @@ The `StrategyAgent` interface supports three provider names:
 Future provider implementations should receive structured metrics rather than
 raw credentials or arbitrary files. Prompt templates live under `prompts/` so
 they can be reviewed and versioned independently.
+
+## Analytics boundary
+
+Metrics are calculated from canonical records only. Source adapters must not
+leak source-specific names into the analytics layer. Dataset averages drive the
+relative performance signals; fixed 50% thresholds define weak retention and
+wrong-region distribution.
+
+The region match score uses only the top observed region and its view share.
+It is explicitly a proxy until a future authorised source provides a complete
+regional distribution.
 
 ## Security model
 
@@ -78,4 +93,3 @@ they can be reviewed and versioned independently.
 A modest next architecture would add a FastAPI service, a persistent database,
 background jobs for authorised provider calls, and a frontend that reads a
 versioned API. Those components are intentionally excluded from the MVP.
-

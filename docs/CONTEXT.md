@@ -29,9 +29,9 @@ The intended workflow helps a founder or marketer explore questions such as:
 - What should the next content concept explore?
 - What script, caption, and hashtags could support that concept?
 
-The MVP answers only the descriptive metrics portion and produces a
-deterministic recommendation stub. Rich strategy and asset generation remain
-future, optional capabilities.
+The MVP answers the descriptive metrics portion, adds deterministic testing
+signals, and produces a recommendation stub. Rich strategy and asset
+generation remain future, optional capabilities.
 
 ## Current MVP workflow
 
@@ -156,31 +156,21 @@ remain independent of the source.
 
 ## Input data assumptions
 
-Each CSV row represents one published video. The MVP requires:
-
-- `post_id`
-- `posted_at`
-- `caption`
-- `views`
-- `likes`
-- `comments`
-- `shares`
-
-It optionally accepts:
-
-- `saves`
-- `duration_seconds`
-- `average_watch_time_seconds`
-- `content_pillar`
-- `hook`
+Each CSV row represents one published video and maps to the canonical schema in
+[`canonical-schema.md`](canonical-schema.md). Required fields cover identity,
+publication time, format, topic, hook, caption, duration, and core engagement
+counts. Optional fields cover URL, saves, watch time, completion, audience
+region, and notes.
 
 Rates use views as the denominator. If views are zero, rate metrics are zero to
 avoid division errors. Save rate is omitted when saves are unavailable.
 Average watch ratio is calculated only when duration and average watch time are
 available and duration is greater than zero.
 
-Future sources may expose fields such as post format or audience region, but
-the current CSV schema and pipeline do not use them.
+When the top region, target region, and top-region share exist, the pipeline
+also calculates a documented region-match proxy. Format and topic fields feed
+group comparisons, and deterministic signals identify repeat, pause,
+distribution, save, hook, and retention hypotheses.
 
 ## Interpretation limits
 
@@ -234,4 +224,3 @@ The project demonstrates more than a single prompt. It shows:
 Together, these make the repository a focused AI engineering portfolio project
 with a working local MVP and an intentionally staged path toward external
 integrations.
-

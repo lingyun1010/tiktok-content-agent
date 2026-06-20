@@ -23,8 +23,10 @@ The offline MVP is working.
 It currently:
 
 - reads synthetic recent-post data from CSV
-- validates and normalises numeric and optional fields
-- calculates like, comment, share, save, engagement, and watch metrics
+- validates and normalises a documented canonical TikTok post schema
+- calculates like, comment, share, save, engagement, watch, and optional region metrics
+- compares performance by format and topic
+- assigns six deterministic, explainable performance signals
 - exports `outputs/demo/metrics_summary.md`
 - exports `outputs/demo/content_plan_stub.json`
 - generates the content-plan stub through a deterministic `manual` provider
@@ -67,17 +69,20 @@ private analytics or brand strategy.
 
 ## Example analysis
 
-The synthetic dataset contains 10 fictional posts across content pillars such
-as education, product ritual, founder story, lifestyle, and behind the scenes.
+The synthetic dataset contains 10 fictional posts across formats and topics
+such as education, product demonstrations, founder stories, lifestyle, and
+behind-the-scenes content.
 
 The generated Markdown report includes:
 
 - posts analysed and total views
 - average engagement rate
 - average watch ratio
-- comparable per-post rates
-- the strongest engagement signal
-- an interpretation warning
+- top and weak post comparisons
+- format and topic performance
+- audience-region notes
+- deterministic signals and next-test guidance
+- a per-post metric appendix
 
 The JSON file contains a reviewable strategy stub and records that no LLM was
 called.
@@ -122,6 +127,7 @@ share_rate         = shares / views
 save_rate          = saves / views, when saves are available
 engagement_rate    = (likes + comments + shares + available saves) / views
 average_watch_ratio = average watch time / duration
+region_match_score  = top-region share when target matches, otherwise its remainder
 ```
 
 Zero-view records receive zero-valued rate metrics. Missing optional values are
@@ -129,6 +135,10 @@ kept missing rather than invented.
 
 These metrics are descriptive, not causal. They support creative testing but do
 not guarantee future performance.
+
+The canonical fields, validation rules, region-score limitation, and signal
+thresholds are documented in
+[`docs/canonical-schema.md`](docs/canonical-schema.md).
 
 ## Repository structure
 
@@ -139,6 +149,7 @@ docs/
   project-brief.md        Product goal, users, scope, and non-goals
   CONTEXT.md              Business context and operating assumptions
   architecture.md         Data flow, boundaries, and security model
+  canonical-schema.md     Input fields, calculated metrics, and signal rules
   setup-notes.md          Local setup and future CI plan
 examples/
   sample_recent_posts.csv Synthetic public demo data
@@ -235,7 +246,7 @@ The default tests must remain independent of paid APIs and repository secrets.
 
 ## Roadmap
 
-1. Add schema validation and richer content-pillar comparisons.
+1. Build the deterministic Phase 2 strategy plan from Phase 1 signals.
 2. Add Airtable and authorised export adapters.
 3. Implement opt-in OpenAI and DeepSeek strategy providers.
 4. Validate structured provider responses.
@@ -267,4 +278,3 @@ human creative judgement.
 See [the project brief](docs/project-brief.md),
 [project context](docs/CONTEXT.md), and
 [architecture notes](docs/architecture.md) for deeper detail.
-
