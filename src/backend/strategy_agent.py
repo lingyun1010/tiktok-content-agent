@@ -1,4 +1,4 @@
-"""Strategy provider boundary for manual and future LLM-backed plans."""
+"""Strategy provider boundary for manual and opt-in LLM-backed plans."""
 
 from __future__ import annotations
 
@@ -6,7 +6,9 @@ import re
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-SUPPORTED_PROVIDERS = ("manual", "openai", "deepseek")
+from .llm_strategy import ClaudeStrategyProvider, OpenAIStrategyProvider
+
+SUPPORTED_PROVIDERS = ("manual", "openai", "claude")
 CONTENT_PLAN_SCHEMA_VERSION = "1.0"
 WEAK_RETENTION_THRESHOLD = 0.50
 
@@ -238,14 +240,14 @@ class ManualStrategyProvider:
 
 
 def get_strategy_provider(provider_name: str) -> StrategyProvider:
-    """Return an implemented provider or explain why it is unavailable."""
+    """Return the selected manual or opt-in LLM provider."""
     normalised_name = provider_name.strip().lower()
     if normalised_name == "manual":
         return ManualStrategyProvider()
-    if normalised_name in {"openai", "deepseek"}:
-        raise NotImplementedError(
-            f"Provider '{normalised_name}' is reserved for a future opt-in integration."
-        )
+    if normalised_name == "openai":
+        return OpenAIStrategyProvider.from_environment()
+    if normalised_name == "claude":
+        return ClaudeStrategyProvider.from_environment()
     raise ValueError(
         f"Unknown provider '{provider_name}'. "
         f"Choose one of: {', '.join(SUPPORTED_PROVIDERS)}"

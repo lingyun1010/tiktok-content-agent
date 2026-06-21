@@ -39,6 +39,29 @@ The manual strategy output follows
 [`content-plan-schema.md`](content-plan-schema.md). All generated text is a
 draft and requires human review before publishing.
 
+## Optional LLM strategy providers
+
+Manual remains the default and makes no network calls. Select an LLM provider
+explicitly after configuring its key:
+
+```bash
+python3 -m src.backend.pipeline --mode export_only --source csv \
+  --input examples/sample_recent_posts.csv --limit 10 --provider openai
+
+python3 -m src.backend.pipeline --mode export_only --source csv \
+  --input examples/sample_recent_posts.csv --limit 10 --provider claude
+```
+
+OpenAI and Claude receive a compact aggregate summary, canonical post signals,
+the required content-plan shape, and public brand guidance. Raw records,
+captions, URLs, timestamps, notes, credentials, and private source files are
+not sent. Provider JSON is validated before any plan or draft files are
+written. Invalid JSON, missing fields, wrong types, or invented evidence post
+IDs stop the run with a clear error.
+
+The default tests mock both HTTP boundaries. Do not run live-provider commands
+unless the corresponding key is configured and the API call is intentional.
+
 ## Optional Airtable source
 
 The Airtable adapter uses the standard library and is selected explicitly:
@@ -56,14 +79,16 @@ satisfy `--limit`. Tests mock the HTTP boundary and do not call Airtable.
 
 ## Environment variables
 
-None are required for the sample CSV run. Airtable variables are required only
-when `--source airtable` is selected:
+None are required for the sample CSV run with `--provider manual`. Provider and
+Airtable variables are required only when their integrations are selected:
 
 | Variable | Purpose |
 | --- | --- |
-| `STRATEGY_PROVIDER` | Select `manual`, `openai`, or `deepseek` |
-| `OPENAI_API_KEY` | Future OpenAI provider credential |
-| `DEEPSEEK_API_KEY` | Future DeepSeek provider credential |
+| `MODEL_PROVIDER` | Optional default: `manual`, `openai`, or `claude` |
+| `OPENAI_API_KEY` | Required only for `--provider openai` |
+| `OPENAI_MODEL` | Optional OpenAI model override |
+| `CLAUDE_API_KEY` | Required only for `--provider claude` |
+| `CLAUDE_MODEL` | Optional Claude model override |
 | `AIRTABLE_API_KEY` | Airtable credential sent only in the authorization header |
 | `AIRTABLE_BASE_ID` | Airtable base identifier |
 | `AIRTABLE_TABLE_ID` | Airtable table ID beginning with `tbl` |
@@ -83,6 +108,9 @@ and does not yet read pipeline output.
 
 - Run the command from the repository root so Python can resolve `src`.
 - CSV is the default source and requires `--input`.
+- OpenAI requires `OPENAI_API_KEY`; Claude requires `CLAUDE_API_KEY`.
+- Provider errors never include configured key values.
+- Invalid provider JSON is rejected before strategy files are exported.
 - Airtable requires all four `AIRTABLE_*` variables and omits `--input`.
 - Rename older local variables from `AIRTABLE_TABLE_NAME` and
   `AIRTABLE_VIEW_NAME` to `AIRTABLE_TABLE_ID` and `AIRTABLE_VIEW_ID`.

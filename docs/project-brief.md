@@ -57,7 +57,7 @@ The MVP:
 - produces an LLM-ready Markdown metrics report
 - produces a deterministic JSON content plan without an LLM
 - produces a reviewable script, caption, and hashtag set from the same plan
-- defines a clean boundary for manual, OpenAI, and DeepSeek providers
+- defines a clean boundary for manual, OpenAI, and Claude providers
 - includes an intentionally minimal static frontend concept
 - runs locally without credentials, network access, or external services
 
@@ -89,7 +89,7 @@ Potential future iterations may include:
 - Airtable ingestion through a data-source adapter
 - authorised export ingestion from other sources
 - richer trend and hook-level analysis
-- opt-in OpenAI or DeepSeek strategy generation
+- further opt-in strategy providers
 - image and video prompt generation
 - a small backend API
 - an interactive dashboard

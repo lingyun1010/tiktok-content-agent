@@ -125,23 +125,22 @@ run locally, in CI, or in a future scheduled environment.
 
 ## Role of an LLM
 
-An optional future LLM acts as a strategy and generation layer rather than the
-source of metric truth.
+An optional LLM acts as a strategy and generation layer rather than the source
+of metric truth.
 
-It may eventually generate:
+It may generate:
 
 - a performance interpretation
 - content concepts and testable hypotheses
 - video scripts or carousel outlines
 - captions and hashtags
-- image or video-generation prompts
 
 The provider should receive a compact structured summary instead of unrestricted
 raw files. Provider output must be validated and reviewed by a human.
 
-The MVP does not call a real LLM. Its `manual` provider uses deterministic
-rules to generate the plan, script, caption, and hashtags so the complete local
-pipeline remains testable without credentials.
+The default `manual` provider uses deterministic rules so the complete local
+pipeline remains testable without credentials. OpenAI and Claude calls are
+explicitly opt-in and their returned plans are validated before export.
 
 ## Data source assumptions
 

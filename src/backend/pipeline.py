@@ -16,6 +16,7 @@ from .exporters import (
     write_text,
 )
 from .ingest.airtable import AirtableError, load_posts as load_airtable_posts
+from .llm_strategy import configured_provider_name
 from .metrics import calculate_metrics, summarise_metrics
 from .normalise import normalise_posts
 from .strategy_agent import get_strategy_provider
@@ -48,9 +49,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--provider",
-        choices=("manual", "openai", "deepseek"),
-        default="manual",
-        help="Strategy provider. Only manual is implemented in the MVP.",
+        choices=("manual", "openai", "claude"),
+        default=None,
+        help="Strategy provider. Defaults to MODEL_PROVIDER or manual.",
     )
     parser.add_argument(
         "--output-dir",
@@ -68,7 +69,7 @@ def run_pipeline(
     output_dir: Path,
     source: str = "csv",
 ) -> tuple[Path, Path, Path, Path, Path]:
-    """Run ingestion, metrics, and offline plan generation."""
+    """Run ingestion, deterministic metrics, and selected strategy generation."""
     if source == "csv":
         if input_path is None:
             raise ValueError("--input is required when --source csv is selected")
@@ -111,7 +112,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         output_paths = run_pipeline(
             input_path=args.input,
             limit=args.limit,
-            provider_name=args.provider,
+            provider_name=args.provider or configured_provider_name(),
             output_dir=args.output_dir,
             source=args.source,
         )

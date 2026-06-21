@@ -1,16 +1,16 @@
 # Content Plan Schema
 
-Phase 2 defines `outputs/demo/content_plan.json` as the stable boundary between
-analytics, manual strategy generation, and future presentation layers.
+`outputs/demo/content_plan.json` is the stable boundary between deterministic
+analytics, strategy providers, and future presentation layers.
 
 ## Top-level fields
 
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `schema_version` | text | Current schema version, `1.0` |
-| `status` | text | Always `draft_for_human_review` in manual mode |
-| `provider` | text | `manual` for the implemented offline provider |
-| `llm_called` | boolean | Always `false` in manual mode |
+| `status` | text | Always `draft_for_human_review` |
+| `provider` | text | `manual`, `openai`, or `claude` |
+| `llm_called` | boolean | `false` for manual; `true` for LLM providers |
 | `human_review_required` | boolean | Always `true` |
 | `analysis_basis` | object | Input count and post IDs behind each strategy rule |
 | `strategy` | object | Repeat, pause, and retention decisions with reasons |
