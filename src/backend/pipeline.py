@@ -9,6 +9,7 @@ from typing import Sequence
 from .csv_source import load_posts as load_csv_posts
 from .exporters import (
     build_caption_text,
+    build_dashboard_data,
     build_hashtags_text,
     build_metrics_markdown,
     build_script_markdown,
@@ -68,7 +69,7 @@ def run_pipeline(
     provider_name: str,
     output_dir: Path,
     source: str = "csv",
-) -> tuple[Path, Path, Path, Path, Path]:
+) -> tuple[Path, Path, Path, Path, Path, Path]:
     """Run ingestion, deterministic metrics, and selected strategy generation."""
     if source == "csv":
         if input_path is None:
@@ -96,12 +97,30 @@ def run_pipeline(
     script_path = output_dir / "script.md"
     caption_path = output_dir / "caption.txt"
     hashtags_path = output_dir / "hashtags.txt"
-    write_text(metrics_path, build_metrics_markdown(posts, summary, source_label))
+    dashboard_path = output_dir.parent / "latest" / "dashboard_data.json"
+    metrics_content = build_metrics_markdown(posts, summary, source_label)
+    write_text(metrics_path, metrics_content)
     write_json(plan_path, content_plan)
     write_text(script_path, build_script_markdown(content_plan))
     write_text(caption_path, build_caption_text(content_plan))
     write_text(hashtags_path, build_hashtags_text(content_plan))
-    return metrics_path, plan_path, script_path, caption_path, hashtags_path
+    dashboard_data = build_dashboard_data(
+        posts,
+        summary,
+        content_plan,
+        source_label,
+        metrics_path,
+        metrics_content,
+    )
+    write_json(dashboard_path, dashboard_data)
+    return (
+        metrics_path,
+        plan_path,
+        script_path,
+        caption_path,
+        hashtags_path,
+        dashboard_path,
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:

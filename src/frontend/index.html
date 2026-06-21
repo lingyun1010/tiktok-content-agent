@@ -5,49 +5,447 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Frontend placeholder for the TikTok Content Agent portfolio project."
+      content="A static dashboard preview for the offline-first TikTok Content Agent."
     />
-    <title>TikTok Content Agent</title>
+    <title>TikTok Content Agent · Dashboard</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
-    <main class="shell">
-      <p class="eyebrow">Offline-first portfolio MVP</p>
-      <h1>TikTok Content Agent</h1>
-      <p class="intro">
-        A future workspace for turning recent post performance into clearer
-        creative decisions for small DTC brands.
-      </p>
+  <body class="output-missing">
+    <header class="site-header">
+      <a class="brand" href="#overview" aria-label="TikTok Content Agent home">
+        <span class="brand-mark" aria-hidden="true">T</span>
+        <span>
+          <strong>TikTok Content Agent</strong>
+          <small>Strategy workspace</small>
+        </span>
+      </a>
 
-      <section class="grid" aria-label="Planned dashboard features">
-        <article>
-          <span>01</span>
-          <h2>Recent post metrics</h2>
-          <p>Engagement rates, watch ratios, and comparative performance.</p>
+      <button
+        class="menu-button"
+        type="button"
+        aria-expanded="false"
+        aria-controls="site-navigation"
+      >
+        Menu
+      </button>
+
+      <nav id="site-navigation" aria-label="Dashboard sections">
+        <a href="#overview">Overview</a>
+        <a href="#signals">Signals</a>
+        <a href="#recommendation">Next content</a>
+        <a href="#draft">Draft</a>
+      </nav>
+
+      <div class="header-status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="dashboard-mode">Offline sample</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="missing-output" id="missing-output" aria-live="polite">
+        <p class="eyebrow">Dashboard data unavailable</p>
+        <h1>No pipeline output found.</h1>
+        <p>
+          Run the backend pipeline first, then refresh this dashboard.
+        </p>
+        <pre><code>python3 -m src.backend.pipeline --mode export_only --source csv --input examples/sample_recent_posts.csv --limit 10 --provider manual</code></pre>
+        <p>For Airtable:</p>
+        <pre><code>python3 -m src.backend.pipeline --mode export_only --source airtable --limit 10 --provider manual</code></pre>
+      </section>
+
+      <section class="hero" id="overview">
+        <div class="hero-copy">
+          <p class="eyebrow">Phase 5 · Frontend dashboard MVP</p>
+          <h1>Turn performance data into your next creative move.</h1>
+          <p class="hero-intro" id="dashboard-intro">
+            A human-readable view of deterministic TikTok metrics, content
+            signals, and one reviewable draft—built from public synthetic data.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#recommendation">
+              Review next content
+            </a>
+            <a
+              class="button button-secondary"
+              id="plan-link"
+              href="../../examples/sample_content_plan.json"
+            >
+              View sample JSON
+            </a>
+          </div>
+        </div>
+
+        <aside class="pipeline-card" aria-label="Current pipeline status">
+          <div class="card-heading">
+            <div>
+              <p class="overline">Pipeline status</p>
+              <h2>Draft ready for review</h2>
+            </div>
+            <span class="status-pill">Complete</span>
+          </div>
+          <ol class="pipeline-steps">
+            <li class="complete">
+              <span>1</span>
+              <div>
+                <strong id="pipeline-source">CSV ingested</strong>
+                <small id="pipeline-source-detail">10 synthetic posts</small>
+              </div>
+            </li>
+            <li class="complete">
+              <span>2</span>
+              <div>
+                <strong>Metrics calculated</strong>
+                <small>Deterministic offline rules</small>
+              </div>
+            </li>
+            <li class="complete">
+              <span>3</span>
+              <div>
+                <strong>Strategy generated</strong>
+                <small id="pipeline-provider">Manual provider · no LLM call</small>
+              </div>
+            </li>
+            <li class="review">
+              <span>4</span>
+              <div>
+                <strong>Human review</strong>
+                <small>Required before publishing</small>
+              </div>
+            </li>
+          </ol>
+        </aside>
+      </section>
+
+      <section class="section" aria-labelledby="dataset-title">
+        <div class="section-heading">
+          <div>
+            <p class="overline">Dataset overview</p>
+            <h2 id="dataset-title">The latest sample at a glance</h2>
+          </div>
+          <a
+            class="text-link"
+            id="metrics-link"
+            href="../../examples/sample_metrics_summary.md"
+          >
+            Read metrics summary <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card metric-card-featured">
+            <p>Posts analysed</p>
+            <strong id="metric-post-count">10</strong>
+            <span id="metric-post-detail">Public synthetic records</span>
+          </article>
+          <article class="metric-card">
+            <p>Total views</p>
+            <strong id="metric-total-views">138K</strong>
+            <span id="metric-average-views">13.8K average per post</span>
+          </article>
+          <article class="metric-card">
+            <p>Avg. engagement</p>
+            <strong id="metric-engagement">11.03%</strong>
+            <span>Likes, comments, shares + saves</span>
+          </article>
+          <article class="metric-card">
+            <p>Avg. watch ratio</p>
+            <strong id="metric-watch">66.91%</strong>
+            <span>Watch time ÷ duration</span>
+          </article>
+        </div>
+
+        <article class="top-post-card">
+          <div class="rank">01</div>
+          <div class="top-post-main">
+            <p class="overline">Top performing post</p>
+            <h3 id="top-post-hook">“You may be using too much”</h3>
+            <p id="top-post-meta">Talking head · Scalp oil education · demo-004</p>
+          </div>
+          <div class="top-post-stat">
+            <strong id="top-post-views">22.1K</strong>
+            <span>views</span>
+          </div>
+          <div class="top-post-stat">
+            <strong id="top-post-engagement">12.62%</strong>
+            <span>engagement</span>
+          </div>
+          <div class="top-post-stat">
+            <strong id="top-post-watch">82.96%</strong>
+            <span>watch ratio</span>
+          </div>
+          <span class="signal-tag signal-positive" id="top-post-signal">
+            Repeat candidate
+          </span>
         </article>
-        <article>
-          <span>02</span>
-          <h2>Content recommendations</h2>
-          <p>Structured ideas grounded in recent performance signals.</p>
-        </article>
-        <article>
-          <span>03</span>
-          <h2>Generated scripts</h2>
-          <p>Reviewable hooks, beats, and calls to action from future providers.</p>
-        </article>
-        <article>
-          <span>04</span>
-          <h2>Captions and hashtags</h2>
-          <p>Editable publishing assets that remain under human control.</p>
+
+        <div class="post-table-wrap">
+          <div class="post-table-heading">
+            <div>
+              <p class="overline">Normalised post summaries</p>
+              <h3>Performance behind the overview</h3>
+            </div>
+            <span id="generated-at">Generated time unavailable</span>
+          </div>
+          <div class="post-table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Post</th>
+                  <th>Format</th>
+                  <th>Topic</th>
+                  <th>Views</th>
+                  <th>Engagement</th>
+                  <th>Watch</th>
+                  <th>Signals</th>
+                </tr>
+              </thead>
+              <tbody id="post-summary-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="signals" aria-labelledby="signals-title">
+        <div class="section-heading">
+          <div>
+            <p class="overline">Top content signals</p>
+            <h2 id="signals-title">What the sample is telling us</h2>
+          </div>
+          <p class="section-note">
+            Descriptive signals, not causal claims.
+          </p>
+        </div>
+
+        <div class="signal-grid">
+          <article class="signal-card signal-card-wide">
+            <div class="signal-icon signal-icon-positive" aria-hidden="true">↗</div>
+            <p class="overline">Repeat</p>
+            <h3 id="repeat-title">
+              Education-led talking heads are the clearest pattern.
+            </h3>
+            <p id="repeat-copy">
+              Four posts meet the repeat threshold. Preserve the premise and
+              change one creative variable in the next controlled test.
+            </p>
+            <div class="signal-footer">
+              <span id="repeat-count">4 posts</span>
+              <span id="repeat-ids">demo-001 · 003 · 004 · 009</span>
+            </div>
+          </article>
+
+          <article class="signal-card">
+            <div class="signal-icon signal-icon-warning" aria-hidden="true">∿</div>
+            <p class="overline">Retention</p>
+            <h3>Tighten the middle.</h3>
+            <p id="retention-copy">
+              Two posts fall below a 50% watch ratio. State the value sooner
+              and remove slow setup.
+            </p>
+            <div class="signal-footer">
+              <span id="retention-count">2 posts</span>
+              <span id="retention-ids">demo-008 · 010</span>
+            </div>
+          </article>
+
+          <article class="signal-card">
+            <div class="signal-icon signal-icon-muted" aria-hidden="true">‖</div>
+            <p class="overline">Pause</p>
+            <h3 id="pause-title">Revise manufacturing BTS.</h3>
+            <p id="pause-copy">
+              Pause direct repetition of demo-010 until its hook or retention
+              is meaningfully changed.
+            </p>
+            <div class="signal-footer">
+              <span id="pause-count">1 post</span>
+              <span id="pause-ids">demo-010</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="section recommendation-section"
+        id="recommendation"
+        aria-labelledby="recommendation-title"
+      >
+        <div class="recommendation-copy">
+          <p class="overline">Recommended next content</p>
+          <h2 id="recommendation-title">
+            Scalp oil education:<br />one clear next-step test
+          </h2>
+          <p class="recommendation-lead" id="primary-goal">
+            Retest the strongest supported talking-head approach while changing
+            one creative variable.
+          </p>
+          <dl class="recommendation-details">
+            <div>
+              <dt>Format</dt>
+              <dd id="recommendation-format">Talking head</dd>
+            </div>
+            <div>
+              <dt>Topic</dt>
+              <dd id="recommendation-topic">Scalp oil education</dd>
+            </div>
+            <div>
+              <dt>Evidence</dt>
+              <dd id="recommendation-evidence">demo-004</dd>
+            </div>
+            <div>
+              <dt>Provider</dt>
+              <dd id="recommendation-provider">Manual · offline</dd>
+            </div>
+          </dl>
+        </div>
+
+        <article class="direction-card">
+          <p class="overline">Creative direction</p>
+          <blockquote id="creative-direction">
+            Preserve the proven premise, introduce one new example, and keep
+            the test focused so the next performance review is interpretable.
+          </blockquote>
+          <div class="direction-note">
+            <span aria-hidden="true">✦</span>
+            <p>
+              <strong>Retention adjustment</strong>
+              <span id="retention-guidance">
+                Use a shorter, punchier edit. State the value immediately and
+                keep one teaching point.
+              </span>
+            </p>
+          </div>
         </article>
       </section>
 
-      <footer>
-        <span id="status">Static preview</span>
-        <span>No TikTok upload · No external API call</span>
-      </footer>
+      <section class="section draft-section" id="draft" aria-labelledby="draft-title">
+        <div class="section-heading">
+          <div>
+            <p class="overline">Generated draft</p>
+            <h2 id="draft-title">Ready to shape in your brand voice</h2>
+          </div>
+          <span class="draft-label">Draft · Human review required</span>
+        </div>
+
+        <div class="draft-layout">
+          <article class="script-card">
+            <div class="card-heading">
+              <div>
+                <p class="overline">Video script</p>
+                <h3 id="script-title">Scalp oil education</h3>
+              </div>
+              <button
+                class="copy-button"
+                type="button"
+                data-copy-target="script-copy"
+              >
+                Copy script
+              </button>
+            </div>
+            <div id="script-copy" class="script-content">
+              <div class="script-block hook-block">
+                <span>Hook</span>
+                <p id="script-hook">You may be using too much.</p>
+              </div>
+              <div class="script-block">
+                <span>Body</span>
+                <ol id="script-body">
+                  <li>
+                    Here is the part of scalp oil education that is easiest to
+                    overcomplicate.
+                  </li>
+                  <li>
+                    Focus on one small adjustment, show it clearly, and explain
+                    why it matters.
+                  </li>
+                  <li>
+                    Try that change in your next routine before adding anything
+                    else.
+                  </li>
+                </ol>
+              </div>
+              <div class="script-block">
+                <span>Call to action</span>
+                <p id="script-cta">
+                  Save this for your next routine and share which step you want
+                  explained next.
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <div class="asset-stack">
+            <article class="asset-card">
+              <div class="asset-heading">
+                <p class="overline">Caption</p>
+                <button
+                  class="copy-button copy-button-small"
+                  type="button"
+                  data-copy-target="caption-copy"
+                >
+                  Copy
+                </button>
+              </div>
+              <p id="caption-copy" class="asset-copy">
+                You may be using too much. A clearer way to approach scalp oil
+                education—save this for your next routine.
+              </p>
+            </article>
+
+            <article class="asset-card">
+              <div class="asset-heading">
+                <p class="overline">Hashtags</p>
+                <button
+                  class="copy-button copy-button-small"
+                  type="button"
+                  data-copy-target="hashtag-copy"
+                >
+                  Copy
+                </button>
+              </div>
+              <div id="hashtag-copy" class="hashtag-list">
+                <span>#ScalpOilEducation</span>
+                <span>#TalkingHead</span>
+                <span>#TikTokContent</span>
+                <span>#ContentExperiment</span>
+                <span>#HairCareTips</span>
+              </div>
+            </article>
+
+            <aside class="review-card">
+              <div class="review-heading">
+                <span aria-hidden="true">!</span>
+                <div>
+                  <p class="overline">Human review note</p>
+                  <h3>Nothing publishes automatically.</h3>
+                </div>
+              </div>
+              <ul id="review-checks">
+                <li>Verify every product, ingredient, and performance claim.</li>
+                <li>
+                  Check brand voice, visual context, accessibility, and
+                  platform compliance.
+                </li>
+                <li>
+                  Edit and approve the script, caption, and hashtags before
+                  publishing.
+                </li>
+              </ul>
+            </aside>
+          </div>
+        </div>
+      </section>
     </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>TikTok Content Agent</strong>
+        <p>Offline-first · AI-ready · Human-reviewed</p>
+      </div>
+      <p id="footer-data-note">
+        Public synthetic sample · No external API calls · No publishing
+      </p>
+    </footer>
+
     <script src="app.js"></script>
   </body>
 </html>
-

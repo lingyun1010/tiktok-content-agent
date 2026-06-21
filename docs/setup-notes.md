@@ -26,6 +26,7 @@ outputs/demo/content_plan.json
 outputs/demo/script.md
 outputs/demo/caption.txt
 outputs/demo/hashtags.txt
+outputs/latest/dashboard_data.json
 ```
 
 The `outputs/` directory is intentionally ignored because real generated
@@ -101,8 +102,18 @@ shell. `.env` is ignored by Git; keep `.env.example` limited to placeholders.
 
 ## Frontend preview
 
-Open `src/frontend/index.html` directly in a browser. It is a visual placeholder
-and does not yet read pipeline output.
+After running the pipeline, start a static server from the repository root:
+
+```bash
+python3 -m http.server 8000
+```
+
+Open `http://localhost:8000/src/frontend/`. The dashboard fetches the ignored
+`outputs/latest/dashboard_data.json` written by the latest run. If the file is
+missing or invalid, the page shows generation instructions and no sample
+metrics. Reload the page after each pipeline run.
+
+See `src/frontend/README.md` for the exact preview and sample-refresh workflow.
 
 ## Troubleshooting
 

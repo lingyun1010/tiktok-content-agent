@@ -6,8 +6,8 @@ The project is split into a Python backend and a small static frontend.
 
 - **Backend:** ingestion, normalisation, metrics, summaries, and strategy
   provider selection.
-- **Frontend:** future presentation of metrics, recommendations, scripts,
-  captions, and hashtags.
+- **Frontend:** static presentation of reviewed public sample metrics,
+  recommendations, scripts, captions, hashtags, and human-review checks.
 
 The MVP communicates through generated files. A future version may place a
 small HTTP API between the two layers.
@@ -89,8 +89,18 @@ the versioned schema documented in
 [`content-plan-schema.md`](content-plan-schema.md).
 
 `pipeline.py` writes `content_plan.json`, then renders `script.md`,
-`caption.txt`, and `hashtags.txt` from that same plan. The pipeline does not
-upload, schedule, or publish any output.
+`caption.txt` and `hashtags.txt`. It also writes the frontend contract at
+`outputs/latest/dashboard_data.json` from the same normalised posts, metric
+summary, and validated plan. The pipeline does not upload, schedule, or publish
+any output.
+
+The Phase 5 frontend contains no backend metric or strategy logic. When served
+locally, it fetches only the latest dashboard JSON. It does not combine sample
+and generated data. Missing or invalid output produces an explicit empty state.
+
+The dashboard payload includes safe normalised post summaries but excludes raw
+Airtable responses, source captions, post URLs, notes, credentials, request
+headers, and provider debug data.
 
 ## Security model
 
