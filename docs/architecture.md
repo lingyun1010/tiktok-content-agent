@@ -35,7 +35,7 @@ examples/sample_recent_posts.csv
 Markdown exporter  strategy_agent
                        |
                        v
-            rule-based manual provider
+          manual / OpenAI / Claude
         |              |
         +------+-------+
                v
@@ -51,7 +51,8 @@ Markdown exporter  strategy_agent
 - `normalise.py`: conversion from string records to a typed internal shape.
 - `metrics.py`: per-post calculations, signals, rankings, and grouped summaries.
 - `exporters.py`: metrics, plan, script, caption, and hashtag rendering/writing.
-- `strategy_agent.py`: provider interface and deterministic manual rules.
+- `strategy_agent.py`: provider selection and deterministic manual rules.
+- `llm_strategy.py`: compact LLM inputs, OpenAI/Claude adapters, and validation.
 - `tiktok_uploader.py`: explicit non-operational placeholder.
 
 ## Provider adapters
@@ -60,12 +61,12 @@ The `StrategyAgent` interface supports three provider names:
 
 - `manual`: implemented; converts metrics and signals into a deterministic,
   human-reviewable plan and text drafts.
-- `openai`: reserved; raises a clear not-implemented error.
-- `deepseek`: reserved; raises a clear not-implemented error.
+- `openai`: opt-in; calls the OpenAI Responses API when configured.
+- `claude`: opt-in; calls the Anthropic Messages API when configured.
 
-Future provider implementations should receive structured metrics rather than
-raw credentials or arbitrary files. Prompt templates live under `prompts/` so
-they can be reviewed and versioned independently.
+LLM providers receive compact structured metrics and signals rather than raw
+records, credentials, or arbitrary files. Prompt templates live under
+`prompts/` so they can be reviewed and versioned independently.
 
 ## Analytics boundary
 
@@ -80,10 +81,12 @@ regional distribution.
 
 ## Strategy and export boundary
 
-The manual provider receives enriched posts plus the Phase 1 summary. It
-selects the strongest repeat candidate, records all pause candidates, and adds
-shorter-edit guidance when watch ratio is below 50%. It returns the versioned
-schema documented in [`content-plan-schema.md`](content-plan-schema.md).
+All providers receive enriched posts plus the Phase 1 summary. The manual
+provider applies deterministic rules. LLM adapters reduce those inputs to a
+compact metrics-and-signals payload and validate the returned draft. Python
+retains ownership of evidence IDs and analysis metadata. Every provider returns
+the versioned schema documented in
+[`content-plan-schema.md`](content-plan-schema.md).
 
 `pipeline.py` writes `content_plan.json`, then renders `script.md`,
 `caption.txt`, and `hashtags.txt` from that same plan. The pipeline does not

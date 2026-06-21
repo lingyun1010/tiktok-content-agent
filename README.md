@@ -4,8 +4,8 @@ An offline-first, AI-ready TikTok content strategy pipeline for small
 direct-to-consumer (DTC) brands.
 
 It turns recent post performance data into transparent metrics, a readable
-summary, and a deterministic manual content plan. CSV remains fully offline;
-optional Airtable ingestion is explicitly selected and environment-configured.
+summary, and a reviewable content plan. CSV and the manual strategy provider
+remain fully offline; Airtable, OpenAI, and Claude integrations are opt-in.
 
 ## Why this project exists
 
@@ -32,34 +32,149 @@ It currently:
 - exports a versioned `outputs/demo/content_plan.json`
 - exports reviewable `script.md`, `caption.txt`, and `hashtags.txt` drafts
 - generates strategy through deterministic rules in the `manual` provider
-- reserves provider boundaries for future `openai` and `deepseek` adapters
+- supports opt-in `openai` and `claude` strategy providers with validated JSON
 - includes a static frontend concept
 - includes an intentionally non-operational TikTok upload placeholder
-- keeps CSV as the default source with no network access or external APIs
+- keeps CSV plus the manual provider as the default offline path
 
-It does not currently connect to Apify, TikTok, OpenAI, DeepSeek,
-image-generation, or video-generation services.
+It does not upload to TikTok or provide image-generation, video-generation, or
+automatic publishing features.
 
-## Quick start
+## How to use
 
 Requirements:
 
 - Python 3.10 or newer
-- no third-party Python packages
+- a virtual environment is recommended
+- dependencies installed from `requirements.txt`
 
-From the repository root:
-
-```bash
-python -m src.backend.pipeline --mode export_only --input examples/sample_recent_posts.csv --limit 10
-```
-
-If Python is exposed as `python3` on your system:
+From the repository root, create and activate a virtual environment, then
+install the dependencies:
 
 ```bash
-python3 -m src.backend.pipeline --mode export_only --input examples/sample_recent_posts.csv --limit 10
+python3 -m venv venv
+source venv/bin/activate
+python3 -m pip install -r requirements.txt
 ```
 
-Expected generated files:
+### 1. CSV with the manual provider
+
+This is the default offline demo. It requires no API keys and makes no network
+requests:
+
+```bash
+python3 -m src.backend.pipeline \
+  --mode export_only \
+  --source csv \
+  --input examples/sample_recent_posts.csv \
+  --limit 10 \
+  --provider manual
+```
+
+### 2. Airtable with the manual provider
+
+Copy `.env.example` to `.env` and configure:
+
+```dotenv
+AIRTABLE_API_KEY=replace_with_your_airtable_key
+AIRTABLE_BASE_ID=replace_with_your_base_id
+AIRTABLE_TABLE_ID=replace_with_your_table_id
+AIRTABLE_VIEW_ID=replace_with_your_view_id
+```
+
+Then run:
+
+```bash
+python3 -m src.backend.pipeline \
+  --mode export_only \
+  --source airtable \
+  --limit 10 \
+  --provider manual
+```
+
+### 3. CSV with OpenAI
+
+Add `OPENAI_API_KEY` and optionally `OPENAI_MODEL` to the ignored local `.env`:
+
+```dotenv
+OPENAI_API_KEY=replace_with_your_key
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+Then run:
+
+```bash
+python3 -m src.backend.pipeline \
+  --mode export_only \
+  --source csv \
+  --input examples/sample_recent_posts.csv \
+  --limit 10 \
+  --provider openai
+```
+
+### 4. Airtable with OpenAI
+
+Configure both the four `AIRTABLE_*` variables and `OPENAI_API_KEY`, then run:
+
+```bash
+python3 -m src.backend.pipeline \
+  --mode export_only \
+  --source airtable \
+  --limit 10 \
+  --provider openai
+```
+
+### 5. CSV or Airtable with Claude
+
+Add `CLAUDE_API_KEY` and optionally `CLAUDE_MODEL` to `.env`:
+
+```dotenv
+CLAUDE_API_KEY=replace_with_your_key
+CLAUDE_MODEL=claude-sonnet-4-5
+```
+
+Use `--provider claude` with either source:
+
+```bash
+python3 -m src.backend.pipeline \
+  --mode export_only \
+  --source airtable \
+  --limit 10 \
+  --provider claude
+```
+
+For CSV, change `--source airtable` to `--source csv` and add:
+
+```bash
+--input examples/sample_recent_posts.csv
+```
+
+Never commit `.env` or paste real keys into source files, documentation, logs,
+or issues.
+
+### Available options
+
+| Option | Values or default | Purpose |
+| --- | --- | --- |
+| `--mode` | `export_only` | Generates local strategy files without publishing |
+| `--source` | `csv` or `airtable`; default `csv` | Selects the analytics source |
+| `--input` | CSV file path | Required only when `--source csv` is used |
+| `--limit` | Integer; default `10` | Maximum number of posts to analyse |
+| `--provider` | `manual`, `openai`, or `claude`; default `manual` | Selects the strategy provider |
+| `--output-dir` | Default `outputs/demo` | Changes the generated-output directory |
+
+`MODEL_PROVIDER` may set the default provider when `--provider` is omitted.
+An explicit `--provider` option takes precedence.
+
+View the built-in command help with:
+
+```bash
+python3 -m src.backend.pipeline --help
+```
+
+### Generated files
+
+Every successful run creates:
 
 ```text
 outputs/demo/metrics_summary.md
@@ -72,15 +187,9 @@ outputs/demo/hashtags.txt
 Generated outputs are deliberately ignored by Git because real runs may contain
 private analytics or brand strategy.
 
-To use Airtable, set the four variables documented in `.env.example`, ensure
-the selected view exposes the canonical field names, then run:
-
-```bash
-python3 -m src.backend.pipeline --source airtable --limit 10
-```
-
-The Airtable source is opt-in and makes a network request. Credentials, base
-identifiers, table names, and view names are not written to generated reports.
+The Airtable, OpenAI, and Claude integrations are opt-in and make network
+requests. Credentials and private source identifiers are not written to the
+generated reports. All strategy output remains a draft for human review.
 
 ## Example analysis
 
@@ -121,7 +230,7 @@ Metrics calculation
     |                     |
     v                     v
 Metrics summary     Strategy provider
-  Markdown          rule-based manual
+  Markdown          manual / OpenAI / Claude
     |                     |
     +----------+----------+
                v
@@ -193,9 +302,10 @@ The Python backend separates:
 The current `manual` provider deterministically selects a repeat candidate,
 records pause and retention guidance, and drafts one script, caption, and
 hashtag set. Its stable output is documented in
-[`docs/content-plan-schema.md`](docs/content-plan-schema.md). Selecting
-`openai` or `deepseek` produces a clear not-implemented error rather than
-making an unexpected network call.
+[`docs/content-plan-schema.md`](docs/content-plan-schema.md). The `openai` and
+`claude` providers are explicitly selected, send only a compact metrics and
+signal payload, validate returned JSON, and require human review. Configuration
+and commands are documented in [`docs/setup-notes.md`](docs/setup-notes.md).
 
 ## Frontend
 
@@ -236,7 +346,7 @@ This is a public portfolio repository.
 - `.env.example` contains placeholders only.
 - Real analytics and generated plans must stay in ignored local directories.
 - The sample command uses no credentials and performs no network calls.
-- Future provider calls must be explicitly enabled and must not log secrets.
+- Provider calls are explicitly selected and do not log secrets.
 - Any future publishing workflow must require authentication, consent, review,
   and auditable actions.
 
@@ -265,12 +375,10 @@ The default tests must remain independent of paid APIs and repository secrets.
 ## Roadmap
 
 1. Add further authorised export adapters.
-2. Implement opt-in OpenAI and DeepSeek strategy providers.
-3. Validate structured provider responses.
-4. Expose results through a small backend API.
-5. Connect the dashboard to generated data.
-6. Add GitHub Actions for offline tests, JSON validation, and secret scanning.
-7. Design a separate, human-reviewed TikTok draft workflow.
+2. Expose results through a small backend API.
+3. Connect the dashboard to generated data.
+4. Add GitHub Actions for offline tests, JSON validation, and secret scanning.
+5. Design a separate, human-reviewed TikTok draft workflow.
 
 Private workflow outputs should be stored as protected artifacts or in private
 storage—not committed to this repository.

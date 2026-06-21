@@ -35,7 +35,7 @@ services.
 - Markdown metrics summary generation
 - Deterministic content-plan stub generation
 - Manual strategy-provider boundary
-- Reserved OpenAI and DeepSeek provider interfaces
+- OpenAI and Claude provider interfaces
 - Non-operational TikTok upload placeholder
 - Static frontend placeholder
 - Offline automated test
@@ -219,7 +219,7 @@ outputs/demo/hashtags.txt
 
 ## Phase 3 — Optional Airtable ingestion
 
-**Status: Planned**
+**Status: Implemented and verified offline**
 
 ### Goal
 
@@ -267,11 +267,11 @@ fallback.
 - Formalise the strategy-provider interface.
 - Keep the manual provider operational.
 - Add an OpenAI provider.
-- Add a DeepSeek provider only if the same adapter contract supports it cleanly.
+- Add a Claude API provider using the same adapter contract.
 - Send a compact metrics summary, plan schema, brand context, and generation
   rules instead of unrestricted raw data.
 - Validate provider output as structured JSON.
-- Fall back safely when output is invalid.
+- Fail clearly without exporting strategy files when output is invalid.
 
 ### Planned deliverables
 

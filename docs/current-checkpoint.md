@@ -2,50 +2,51 @@
 
 ## Last updated
 
-2026-06-20
+2026-06-21
 
 ## Current branch
 
-`feature/phase-3-airtable-ingestion`
+`feature/phase-4-llm-strategy-provider`
 
-The branch was verified clean at Phase 2 merge commit `003e242` before Phase 3
-work began.
+## Current phase
 
-## Phase status
+Phase 4 is implemented and verified offline.
 
-- Phase 0: Completed
-- Phase 1: Completed
-- Phase 2: Completed and merged
-- Phase 3: Implemented and verified offline
+The deterministic analytics pipeline remains unchanged in responsibility:
+Python performs ingestion, canonical normalisation, metric calculation,
+rule-based signals, and metrics-summary generation. Strategy generation can now
+use the deterministic `manual` provider or explicitly selected `openai` and
+`claude` providers.
 
-Phase 3 adds optional Airtable ingestion while preserving CSV as the default.
-The Airtable adapter reads configuration only from environment variables, maps
-canonical field names, paginates up to `--limit`, and does not expose secrets
-or private Airtable identifiers in generated reports.
-
-Local development now loads those variables from an ignored repository-root
-`.env` file through `python-dotenv`. Existing shell variables take precedence.
-
-`topic` and `hook` are optional metadata. Missing values remain `None`, topic
-grouping excludes unavailable topics, reports disclose limited topic coverage,
-and deterministic drafts use neutral wording rather than inferred metadata.
+LLM providers receive only a compact aggregate summary, selected canonical post
+signals, the required plan shape, and public brand guidance. Raw records,
+captions, URLs, timestamps, notes, credentials, and private files are excluded.
+Python validates provider JSON and retains ownership of evidence IDs and
+`analysis_basis` metadata before writing outputs.
 
 ## Changed files
 
 Implementation and tests:
 
-- `src/backend/ingest/__init__.py`
-- `src/backend/ingest/airtable.py`
+- `src/backend/llm_strategy.py`
+- `src/backend/strategy_agent.py`
 - `src/backend/pipeline.py`
 - `src/backend/exporters.py`
-- `src/backend/normalise.py`
 - `tests/test_pipeline.py`
-- `requirements.txt`
 
-Configuration and documentation:
+Prompt and configuration:
 
+- `prompts/content_strategy.md`
 - `.env.example`
+
+Documentation:
+
 - `README.md`
+- `docs/CONTEXT.md`
+- `docs/architecture.md`
+- `docs/content-plan-schema.md`
+- `docs/project-brief.md`
+- `docs/roadmap.md`
 - `docs/setup-notes.md`
 - `docs/current-checkpoint.md`
 
@@ -55,31 +56,32 @@ Configuration and documentation:
 python3 -m unittest discover -v
 ```
 
-Result: 16 tests passed and the `.env` integration test was skipped in the
-Codex runtime because `python-dotenv` is not installed there. Airtable HTTP
-behaviour is mocked in the automated suite.
+Result: 25 tests passed. One existing Airtable `.env` integration test was
+skipped because `python-dotenv` is not installed in the Codex runtime. Provider
+HTTP behaviour and invalid-output handling are mocked; no paid API was called.
 
 ```bash
-python3 -m src.backend.pipeline --mode export_only --input examples/sample_recent_posts.csv --limit 10
+python3 -m src.backend.pipeline --mode export_only --source csv \
+  --input examples/sample_recent_posts.csv --limit 10 --provider manual
 ```
 
-Result: completed successfully and generated all five expected demo outputs.
+Result: completed successfully and generated all five expected outputs.
 
 ```bash
-path/to/venv/bin/python3.11 -m src.backend.pipeline --mode export_only --source airtable --limit 10
+env -u OPENAI_API_KEY -u OPENAI_MODEL python3 -m src.backend.pipeline \
+  --mode export_only --source csv --input examples/sample_recent_posts.csv \
+  --limit 10 --provider openai
 ```
 
-Result: stopped before any request because the private `.env` still uses the
-old table/view variable names. Rename them locally to `AIRTABLE_TABLE_ID` and
-`AIRTABLE_VIEW_ID`, then rerun.
+Result: stopped before network access with a clear `OPENAI_API_KEY` error.
 
 ```bash
-env -u AIRTABLE_API_KEY -u AIRTABLE_BASE_ID -u AIRTABLE_TABLE_ID -u AIRTABLE_VIEW_ID \
-  python3 -m src.backend.pipeline --source airtable --limit 1
+env -u CLAUDE_API_KEY -u CLAUDE_MODEL python3 -m src.backend.pipeline \
+  --mode export_only --source csv --input examples/sample_recent_posts.csv \
+  --limit 10 --provider claude
 ```
 
-Result: exited clearly with the names of all missing variables and no secret
-values.
+Result: stopped before network access with a clear `CLAUDE_API_KEY` error.
 
 ```bash
 python3 -m py_compile src/backend/*.py src/backend/ingest/*.py tests/test_pipeline.py
@@ -88,9 +90,16 @@ git diff --check
 
 Result: completed successfully.
 
-## Generated outputs
+The generated manual plan was parsed as JSON and all five output files were
+confirmed non-empty. A repository secret-pattern scan found only the obvious
+placeholder values in `.env.example`.
 
-The unchanged CSV command generated:
+The README usage section was subsequently expanded with environment setup,
+copy-ready commands for CSV/Airtable combined with manual/OpenAI/Claude, the
+available CLI options, generated outputs, and credential safety guidance. The
+documented options were checked against `python3 -m src.backend.pipeline --help`.
+
+## Generated outputs
 
 ```text
 outputs/demo/metrics_summary.md
@@ -102,19 +111,20 @@ outputs/demo/hashtags.txt
 
 These paths remain ignored by Git.
 
-## Known limitations
+## Known issues and limits
 
-- A live Airtable request was not run because no real credentials or private
-  data were used.
-- Airtable fields must use the canonical names documented in
-  `docs/canonical-schema.md`.
-- Airtable configuration uses stable table (`tbl...`) and view (`viw...`) IDs.
-- Airtable is opt-in and requires network access plus all four `AIRTABLE_*`
-  environment variables.
-- No OpenAI, DeepSeek, media generation, TikTok upload, scheduling, or
-  publishing capability was added.
+- No live OpenAI or Claude request was made because explicit approval was not
+  given.
+- Live account access, billing, selected model availability, and provider-side
+  output quality remain unverified.
+- LLM output fails clearly on invalid JSON, missing fields, wrong types,
+  malformed hashtags, or unknown evidence post IDs; it does not silently fall
+  back to manual output.
+- TikTok upload, media generation, frontend work, and publishing remain out of
+  scope and unchanged.
 
 ## Next recommended task
 
-Review Phase 3 with a private test base outside the default test suite, then
-commit and open a pull request only when explicitly requested.
+Review the Phase 4 diff. If desired, run one explicitly approved private smoke
+test per configured provider, inspect the generated drafts, then commit the
+branch. Do not push or merge without a separate instruction.

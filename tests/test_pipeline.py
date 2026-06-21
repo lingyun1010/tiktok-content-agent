@@ -18,11 +18,19 @@ from src.backend.ingest.airtable import (
     AirtableError,
     load_posts as load_airtable_posts,
 )
+from src.backend.llm_strategy import (
+    ClaudeStrategyProvider,
+    LLMStrategyError,
+    OpenAIStrategyProvider,
+    build_compact_strategy_input,
+    configured_provider_name,
+    validate_llm_plan,
+)
 from src.backend.metrics import add_metrics, calculate_metrics, summarise_metrics
 from src.backend.normalise import normalise_post, normalise_posts
 from src.backend.pipeline import run_pipeline
 from src.backend.schema import CANONICAL_CSV_FIELDS
-from src.backend.strategy_agent import ManualStrategyProvider
+from src.backend.strategy_agent import ManualStrategyProvider, get_strategy_provider
 
 
 def canonical_post(**overrides: Any) -> dict[str, Any]:
@@ -50,6 +58,48 @@ def canonical_post(**overrides: Any) -> dict[str, Any]:
     }
     post.update(overrides)
     return post
+
+
+def valid_llm_payload(post_id: str = "test-001") -> dict[str, Any]:
+    return {
+        "strategy": {
+            "primary_goal": "Test a clearer educational routine concept.",
+            "repeat": {
+                "source_post_id": post_id,
+                "format": "Talking head",
+                "topic": "Education",
+                "reason": "The supplied signals support a controlled follow-up.",
+            },
+            "pause": [],
+            "retention_adjustment": {
+                "required": False,
+                "affected_post_ids": [],
+                "guidance": "Keep the explanation concise.",
+            },
+        },
+        "content_item": {
+            "id": "llm-001",
+            "working_title": "One clearer wash-day step",
+            "format": "Talking head",
+            "topic": "Education",
+            "source_post_id": post_id,
+            "creative_direction": "Demonstrate one practical adjustment.",
+            "script": {
+                "hook": "Your wash-day routine may need one simpler step.",
+                "body": ["Show the step.", "Explain why it is worth testing."],
+                "cta": "Save this for your next wash day.",
+            },
+            "caption": "One practical adjustment to test next.",
+            "hashtags": ["#HairCareTips", "#WashDay"],
+            "review_checks": [
+                "Verify all product and performance claims.",
+                "Approve the final copy before publishing.",
+            ],
+        },
+        "limitations": [
+            "The recommendation is based only on the supplied compact summary."
+        ],
+    }
 
 
 class NormalisationTest(unittest.TestCase):
@@ -530,6 +580,175 @@ class PipelineTest(unittest.TestCase):
 
             for first_path, second_path in zip(first_paths, second_paths):
                 self.assertEqual(first_path.read_bytes(), second_path.read_bytes())
+
+
+class LLMStrategyProviderTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.posts = calculate_metrics([canonical_post()])
+        self.summary = summarise_metrics(self.posts)
+
+    def test_requires_provider_keys_without_printing_other_values(self) -> None:
+        with patch("src.backend.llm_strategy._load_local_dotenv"):
+            with patch.dict(os.environ, {"UNRELATED_SECRET": "do-not-print"}, clear=True):
+                with self.assertRaisesRegex(
+                    LLMStrategyError, "OPENAI_API_KEY"
+                ) as openai_context:
+                    get_strategy_provider("openai")
+                with self.assertRaisesRegex(
+                    LLMStrategyError, "CLAUDE_API_KEY"
+                ) as claude_context:
+                    get_strategy_provider("claude")
+
+        self.assertNotIn("do-not-print", str(openai_context.exception))
+        self.assertNotIn("do-not-print", str(claude_context.exception))
+
+    def test_model_provider_environment_selects_default(self) -> None:
+        with patch("src.backend.llm_strategy._load_local_dotenv"):
+            with patch.dict(os.environ, {"MODEL_PROVIDER": "Claude"}, clear=True):
+                self.assertEqual(configured_provider_name(), "claude")
+
+    def test_compact_input_excludes_raw_private_record_fields(self) -> None:
+        payload = build_compact_strategy_input(self.posts, self.summary)
+        encoded = json.dumps(payload)
+
+        self.assertNotIn("Synthetic test post", encoded)
+        self.assertNotIn("post_url", encoded)
+        self.assertNotIn("published_at", encoded)
+        self.assertNotIn("notes", encoded)
+        self.assertNotIn('"likes"', encoded)
+        self.assertEqual(payload["post_signals"][0]["post_id"], "test-001")
+
+    def test_validation_adds_python_owned_evidence_metadata(self) -> None:
+        payload = valid_llm_payload()
+
+        plan = validate_llm_plan(
+            payload,
+            provider="openai",
+            posts=self.posts,
+            summary=self.summary,
+        )
+
+        self.assertEqual(plan["provider"], "openai")
+        self.assertTrue(plan["llm_called"])
+        self.assertEqual(plan["analysis_basis"]["post_count"], 1)
+        self.assertEqual(plan["analysis_basis"]["top_post_id"], "test-001")
+
+    def test_validation_rejects_missing_fields_and_unknown_source_ids(self) -> None:
+        missing_caption = valid_llm_payload()
+        del missing_caption["content_item"]["caption"]
+        with self.assertRaisesRegex(LLMStrategyError, "content_item.caption"):
+            validate_llm_plan(
+                missing_caption,
+                provider="openai",
+                posts=self.posts,
+                summary=self.summary,
+            )
+
+        unknown_source = valid_llm_payload(post_id="invented-post")
+        with self.assertRaisesRegex(LLMStrategyError, "unknown post ID"):
+            validate_llm_plan(
+                unknown_source,
+                provider="claude",
+                posts=self.posts,
+                summary=self.summary,
+            )
+
+    def test_openai_provider_parses_mocked_response_and_sends_compact_input(
+        self,
+    ) -> None:
+        api_response = {
+            "output": [
+                {
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": json.dumps(valid_llm_payload()),
+                        }
+                    ]
+                }
+            ]
+        }
+        captured_request: dict[str, Any] = {}
+
+        class FakeResponse:
+            def __enter__(self) -> "FakeResponse":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return json.dumps(api_response).encode("utf-8")
+
+        def fake_urlopen(request: Any, timeout: int) -> FakeResponse:
+            captured_request["request"] = request
+            captured_request["timeout"] = timeout
+            return FakeResponse()
+
+        provider = OpenAIStrategyProvider("test-openai-key", "test-openai-model")
+        with patch("src.backend.llm_strategy.urlopen", side_effect=fake_urlopen):
+            plan = provider.generate_plan(self.posts, self.summary)
+
+        request_body = json.loads(captured_request["request"].data)
+        compact_input = json.loads(request_body["input"])
+        self.assertEqual(plan["provider"], "openai")
+        self.assertEqual(request_body["model"], "test-openai-model")
+        self.assertNotIn("caption", compact_input["post_signals"][0])
+        self.assertEqual(
+            captured_request["request"].get_header("Authorization"),
+            "Bearer test-openai-key",
+        )
+
+    def test_claude_provider_rejects_invalid_json_gracefully(self) -> None:
+        api_response = {"content": [{"type": "text", "text": "not-json"}]}
+
+        class FakeResponse:
+            def __enter__(self) -> "FakeResponse":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return json.dumps(api_response).encode("utf-8")
+
+        provider = ClaudeStrategyProvider("test-claude-key", "test-claude-model")
+        with patch("src.backend.llm_strategy.urlopen", return_value=FakeResponse()):
+            with self.assertRaisesRegex(LLMStrategyError, "invalid JSON"):
+                provider.generate_plan(self.posts, self.summary)
+
+    def test_pipeline_renders_all_outputs_from_validated_llm_plan(self) -> None:
+        class FakeLLMProvider:
+            def generate_plan(
+                self,
+                posts: list[dict[str, Any]],
+                summary: dict[str, Any],
+            ) -> dict[str, Any]:
+                return validate_llm_plan(
+                    valid_llm_payload(post_id=posts[0]["post_id"]),
+                    provider="claude",
+                    posts=posts,
+                    summary=summary,
+                )
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with patch(
+                "src.backend.pipeline.get_strategy_provider",
+                return_value=FakeLLMProvider(),
+            ):
+                paths = run_pipeline(
+                    input_path=Path("examples/sample_recent_posts.csv"),
+                    limit=1,
+                    provider_name="claude",
+                    output_dir=Path(temporary_directory),
+                )
+
+            plan = json.loads(paths[1].read_text(encoding="utf-8"))
+            script = paths[2].read_text(encoding="utf-8")
+
+        self.assertEqual(plan["provider"], "claude")
+        self.assertTrue(plan["llm_called"])
+        self.assertIn("opt-in claude strategy provider", script)
 
 
 if __name__ == "__main__":
