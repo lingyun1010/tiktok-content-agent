@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -281,6 +282,66 @@ def build_caption_text(plan: dict[str, Any]) -> str:
 def build_hashtags_text(plan: dict[str, Any]) -> str:
     """Return deterministic hashtags on one copy-ready line."""
     return " ".join(plan["content_item"]["hashtags"]) + "\n"
+
+
+def build_dashboard_data(
+    posts: list[dict[str, Any]],
+    summary: dict[str, Any],
+    plan: dict[str, Any],
+    source: str | Path,
+    metrics_path: Path,
+    metrics_content: str,
+) -> dict[str, Any]:
+    """Build the safe, presentation-only payload consumed by the dashboard."""
+    source_label = source.as_posix() if isinstance(source, Path) else source
+    item = plan["content_item"]
+
+    def safe_post_summary(post: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "post_id": post["post_id"],
+            "format": post["format"],
+            "topic": post["topic"],
+            "hook": post["hook"],
+            "views": post["views"],
+            "engagement_rate": post["engagement_rate"],
+            "average_watch_ratio": post["average_watch_ratio"],
+            "region_match_score": post["region_match_score"],
+            "signals": post["signals"],
+        }
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source": source_label,
+        "provider": plan["provider"],
+        "dataset_overview": {
+            "post_count": summary["post_count"],
+            "total_views": summary["total_views"],
+            "average_views": summary["average_views"],
+            "average_engagement_rate": summary["average_engagement_rate"],
+            "average_watch_ratio": summary["average_watch_ratio"],
+            "top_post": safe_post_summary(summary["top_post"]),
+        },
+        "posts": [safe_post_summary(post) for post in posts],
+        "signals": {
+            "repeat_post_ids": plan["analysis_basis"][
+                "repeat_candidate_post_ids"
+            ],
+            "pause_post_ids": plan["analysis_basis"]["pause_candidate_post_ids"],
+            "weak_retention_post_ids": plan["analysis_basis"][
+                "weak_retention_post_ids"
+            ],
+        },
+        "metrics_summary": {
+            "path": metrics_path.as_posix(),
+            "content": metrics_content,
+        },
+        "content_plan_path": metrics_path.with_name("content_plan.json").as_posix(),
+        "content_plan": plan,
+        "script": item["script"],
+        "caption": item["caption"],
+        "hashtags": item["hashtags"],
+        "human_review_note": item.get("review_checks", []),
+    }
 
 
 def write_text(path: Path, content: str) -> None:

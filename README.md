@@ -33,7 +33,8 @@ It currently:
 - exports reviewable `script.md`, `caption.txt`, and `hashtags.txt` drafts
 - generates strategy through deterministic rules in the `manual` provider
 - supports opt-in `openai` and `claude` strategy providers with validated JSON
-- includes a static frontend concept
+- includes a responsive static dashboard for reviewing public sample metrics,
+  signals, recommendations, and draft content
 - includes an intentionally non-operational TikTok upload placeholder
 - keeps CSV plus the manual provider as the default offline path
 
@@ -182,6 +183,7 @@ outputs/demo/content_plan.json
 outputs/demo/script.md
 outputs/demo/caption.txt
 outputs/demo/hashtags.txt
+outputs/latest/dashboard_data.json
 ```
 
 Generated outputs are deliberately ignored by Git because real runs may contain
@@ -190,6 +192,14 @@ private analytics or brand strategy.
 The Airtable, OpenAI, and Claude integrations are opt-in and make network
 requests. Credentials and private source identifiers are not written to the
 generated reports. All strategy output remains a draft for human review.
+
+### Frontend dashboard
+
+After running the pipeline, start `python3 -m http.server 8000` from the
+repository root and open `http://localhost:8000/src/frontend/`. The
+framework-free dashboard reads only `outputs/latest/dashboard_data.json`. If
+that ignored file is absent or invalid, it shows a clear missing-output message
+instead of sample results. See `src/frontend/README.md` for details.
 
 ## Example analysis
 
@@ -238,8 +248,8 @@ Metrics summary     Strategy provider
 ```
 
 The backend owns ingestion, validation, metrics, strategy generation, and
-export. The frontend is currently static and will later consume a stable
-exported schema or backend API.
+export. The static frontend presents a reviewed public sample of that output;
+it does not calculate metrics or read ignored private outputs.
 
 ## Metrics
 
@@ -281,7 +291,7 @@ examples/
   sample_recent_posts.csv Synthetic public demo data
 prompts/                  Future provider prompt templates
 src/backend/              Python pipeline and provider boundaries
-src/frontend/             Static dashboard placeholder
+src/frontend/             Static dashboard for latest local pipeline results
 tests/                    Offline automated tests
 data/raw/                 Ignored private source data
 data/processed/           Ignored private transformed data
@@ -309,10 +319,9 @@ and commands are documented in [`docs/setup-notes.md`](docs/setup-notes.md).
 
 ## Frontend
 
-The current frontend is a static HTML/CSS/JavaScript concept under
-`src/frontend/`.
+The frontend is a static HTML/CSS/JavaScript dashboard under `src/frontend/`.
 
-It previews a future dashboard for:
+It displays:
 
 - recent post metrics
 - performance summaries
@@ -320,8 +329,9 @@ It previews a future dashboard for:
 - generated scripts
 - captions and hashtags
 
-Open `src/frontend/index.html` directly in a browser to view it. It does not yet
-read pipeline outputs.
+Serve the repository locally and open `http://localhost:8000/src/frontend/`.
+The page displays the single latest result written to
+`outputs/latest/dashboard_data.json`.
 
 ## Human review
 
@@ -376,9 +386,8 @@ The default tests must remain independent of paid APIs and repository secrets.
 
 1. Add further authorised export adapters.
 2. Expose results through a small backend API.
-3. Connect the dashboard to generated data.
-4. Add GitHub Actions for offline tests, JSON validation, and secret scanning.
-5. Design a separate, human-reviewed TikTok draft workflow.
+3. Add GitHub Actions for offline tests, JSON validation, and secret scanning.
+4. Design a separate, human-reviewed TikTok draft workflow.
 
 Private workflow outputs should be stored as protected artifacts or in private
 storage—not committed to this repository.

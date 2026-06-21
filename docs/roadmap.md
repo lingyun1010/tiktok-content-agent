@@ -293,28 +293,34 @@ outputs/demo/content_plan.json
 
 ## Phase 5 — Frontend dashboard MVP
 
-**Status: Planned**
+**Status: Implemented**
 
 ### Goal
 
 Present metrics and recommendations as a lightweight product experience rather
 than a command-line-only demonstration.
 
-### Planned work
+### Implemented work
 
 - Extend the existing static HTML, CSS, and JavaScript frontend.
 - Display sample metrics and a sample content plan.
 - Show top and weak posts, recommendations, scripts, captions, and hashtags.
 - Avoid authentication, databases, and real API connections.
 - Add clear local preview instructions.
+- Serve the dashboard locally so it can fetch one complete latest-run JSON
+  contract.
+- Show an explicit missing-output state instead of silently falling back to
+  sample metrics.
 
-### Planned deliverables
+### Implemented deliverables
 
 ```text
 src/frontend/index.html
 src/frontend/styles.css
 src/frontend/app.js
+src/frontend/README.md
 examples/sample_content_plan.json
+examples/sample_metrics_summary.md
 ```
 
 ### Exit criteria
@@ -480,9 +486,9 @@ The planned sequence is:
 0. Repository scaffold and offline demo                     Completed
 1. Canonical schema and stronger analytics                  Completed
 2. Rule-based manual strategy mode                          Completed
-3. Optional Airtable ingestion                              Next milestone
-4. Optional LLM strategy providers                          Planned
-5. Frontend dashboard MVP                                   Planned
+3. Optional Airtable ingestion                              Completed
+4. Optional LLM strategy providers                          Completed
+5. Frontend dashboard MVP                                   Completed
 6. GitHub Actions and reproducible checks                   Planned
 7. Image and video prompt generation                        Planned
 8. TikTok draft payload design                              Planned

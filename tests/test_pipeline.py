@@ -529,6 +529,7 @@ class PipelineTest(unittest.TestCase):
                 script_path,
                 caption_path,
                 hashtags_path,
+                dashboard_path,
             ) = run_pipeline(
                 input_path=Path("examples/sample_recent_posts.csv"),
                 limit=10,
@@ -561,6 +562,25 @@ class PipelineTest(unittest.TestCase):
             hashtags = hashtags_path.read_text(encoding="utf-8").strip()
             self.assertTrue(hashtags.startswith("#"))
             self.assertIn(" ", hashtags)
+            dashboard_payload = json.loads(
+                dashboard_path.read_text(encoding="utf-8")
+            )
+            self.assertEqual(dashboard_path.name, "dashboard_data.json")
+            self.assertEqual(dashboard_payload["source"], "examples/sample_recent_posts.csv")
+            self.assertEqual(dashboard_payload["provider"], "manual")
+            self.assertEqual(
+                dashboard_payload["dataset_overview"]["post_count"], 10
+            )
+            self.assertEqual(len(dashboard_payload["posts"]), 10)
+            self.assertEqual(dashboard_payload["content_plan"], plan)
+            self.assertEqual(
+                dashboard_payload["caption"], plan["content_item"]["caption"]
+            )
+            self.assertNotIn("notes", dashboard_payload["posts"][0])
+            self.assertNotIn("post_url", dashboard_payload["posts"][0])
+            self.assertNotIn(
+                "caption", dashboard_payload["dataset_overview"]["top_post"]
+            )
 
     def test_phase_2_outputs_are_deterministic(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -578,7 +598,7 @@ class PipelineTest(unittest.TestCase):
                 base / "second",
             )
 
-            for first_path, second_path in zip(first_paths, second_paths):
+            for first_path, second_path in zip(first_paths[:5], second_paths[:5]):
                 self.assertEqual(first_path.read_bytes(), second_path.read_bytes())
 
 
@@ -745,10 +765,13 @@ class LLMStrategyProviderTest(unittest.TestCase):
 
             plan = json.loads(paths[1].read_text(encoding="utf-8"))
             script = paths[2].read_text(encoding="utf-8")
+            dashboard = json.loads(paths[5].read_text(encoding="utf-8"))
 
         self.assertEqual(plan["provider"], "claude")
         self.assertTrue(plan["llm_called"])
         self.assertIn("opt-in claude strategy provider", script)
+        self.assertEqual(dashboard["provider"], "claude")
+        self.assertTrue(dashboard["content_plan"]["llm_called"])
 
 
 if __name__ == "__main__":

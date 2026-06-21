@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "status": "draft_for_human_review",
+  "provider": "manual",
+  "llm_called": false,
+  "human_review_required": true,
+  "analysis_basis": {
+    "post_count": 10,
+    "top_post_id": "demo-004",
+    "repeat_candidate_post_ids": [
+      "demo-004",
+      "demo-009",
+      "demo-001",
+      "demo-003"
+    ],
+    "pause_candidate_post_ids": [
+      "demo-010"
+    ],
+    "weak_retention_post_ids": [
+      "demo-010",
+      "demo-008"
+    ]
+  },
+  "strategy": {
+    "primary_goal": "Retest the strongest supported Talking head approach around Scalp oil education while changing one creative variable.",
+    "repeat": {
+      "source_post_id": "demo-004",
+      "format": "Talking head",
+      "topic": "Scalp oil education",
+      "reason": "Selected by `repeat_candidate`: engagement 12.62%, watch ratio 82.96%, and signals repeat_candidate."
+    },
+    "pause": [
+      {
+        "post_id": "demo-010",
+        "format": "Behind the scenes",
+        "topic": "Manufacturing",
+        "action": "Pause direct repetition until the weak signal is revised.",
+        "reason": "`pause_candidate` on demo-010; engagement 10.23%; watch ratio 41.25%."
+      }
+    ],
+    "retention_adjustment": {
+      "required": true,
+      "affected_post_ids": [
+        "demo-010",
+        "demo-008"
+      ],
+      "guidance": "Use a shorter, punchier edit: state the value immediately, keep one teaching point, and remove any slow setup."
+    }
+  },
+  "content_item": {
+    "id": "manual-001",
+    "working_title": "Scalp oil education: one clear next-step test",
+    "format": "Talking head",
+    "topic": "Scalp oil education",
+    "source_post_id": "demo-004",
+    "creative_direction": "Preserve the proven premise, introduce one new example, and keep the test focused so the next performance review is interpretable.",
+    "script": {
+      "hook": "You may be using too much",
+      "body": [
+        "Here is the part of scalp oil education that is easiest to overcomplicate.",
+        "Focus on one small adjustment, show it clearly, and explain why it matters.",
+        "Try that change in your next routine before adding anything else."
+      ],
+      "cta": "Save this for your next routine and share which step you want explained next."
+    },
+    "caption": "You may be using too much. A clearer way to approach scalp oil education—save this for your next routine.",
+    "hashtags": [
+      "#ScalpOilEducation",
+      "#TalkingHead",
+      "#TikTokContent",
+      "#ContentExperiment",
+      "#HairCareTips"
+    ],
+    "review_checks": [
+      "Verify every product, ingredient, and performance claim.",
+      "Check brand voice, visual context, accessibility, and platform compliance.",
+      "Edit and approve the script, caption, and hashtags before publishing."
+    ]
+  },
+  "limitations": [
+    "Rules describe this small input dataset and do not establish causation.",
+    "The draft does not account for current trends, audio, timing, or visual execution.",
+    "No content is uploaded, scheduled, or published by this pipeline."
+  ]
+}
