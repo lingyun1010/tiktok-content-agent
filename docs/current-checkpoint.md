@@ -10,13 +10,41 @@
 
 ## Current phase
 
-Portfolio milestone: Analyst Evaluation Harness is implemented on top of the
-existing deterministic manual analyst flow and ReAct-like tool trace.
+README portfolio polish completed after the Analyst Evaluation Harness
+milestone. The README now presents the project as a local-first AI content
+intelligence system with tool-grounded analyst chat and offline evaluation,
+while keeping detailed setup and schema material in `docs/`.
 
 The project remains a local-first AI Engineer portfolio project, not a SaaS
 product. The existing `POST /api/analyst-chat` endpoint is preserved. No auth,
 database, billing, tenancy, deployment, background job, publishing, or new
 analyst endpoint was added.
+
+## Latest documentation update
+
+Changed files:
+
+- `README.md`
+- `docs/current-checkpoint.md`
+
+README changes:
+
+- simplified the top half for portfolio readability
+- added a concise Mermaid architecture overview
+- summarised AI engineering concepts in a table
+- kept local run, test, dashboard, and eval commands easy to scan
+- kept analyst tools, ReAct-like trace, and offline eval visible
+- moved long setup/provider/schema detail to linked docs instead of duplicating
+  it in the README
+- avoided SaaS, production, deployment, or automatic publishing claims
+
+Verification for this documentation-only update:
+
+```bash
+git diff --check
+```
+
+Result: passed.
 
 ## Phase 6B pieces reused
 
