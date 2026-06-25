@@ -79,6 +79,8 @@ From the repository root, create and activate a virtual environment, then instal
 ```
 python3 -m venv venv
 source venv/bin/activate
+export SSL_CERT_FILE=$(python -c "import certifi; print(certifi.where())")
+export REQUESTS_CA_BUNDLE=$SSL_CERT_FILE
 python3 -m pip install -r requirements.txt
 ```
 
@@ -469,6 +471,10 @@ outputs/latest/dashboard_data.json
 ```
 
 If that file does not exist, the page asks the user to run the pipeline first.
+
+### Analyst chat overview
+
+![Dashboard metrics section](docs/assets/dashboard-05-ask.png)
 
 ## Human review
 
