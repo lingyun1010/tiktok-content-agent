@@ -66,6 +66,9 @@ over that safe structured payload. The evaluation harness tests analyst
 behaviour without calling OpenAI, Claude, Airtable, TikTok, or any other
 external API.
 
+![TikTok Content Agent architecture overview](docs/assets/AI_Agent_Architecture.png)
+
+
 ## AI Engineering Concepts Demonstrated
 
 | Concept | How this project demonstrates it |
