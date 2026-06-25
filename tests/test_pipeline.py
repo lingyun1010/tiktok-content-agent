@@ -13,6 +13,7 @@ from typing import Any
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
 
+from src.backend.analyst_chat import AnalystChatError, answer_question
 from src.backend.ingest.airtable import (
     AirtableConfig,
     AirtableError,
@@ -581,6 +582,42 @@ class PipelineTest(unittest.TestCase):
             self.assertNotIn(
                 "caption", dashboard_payload["dataset_overview"]["top_post"]
             )
+
+    def test_analyst_chat_answers_from_dashboard_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            *_, dashboard_path = run_pipeline(
+                input_path=Path("examples/sample_recent_posts.csv"),
+                limit=10,
+                provider_name="manual",
+                output_dir=Path(temporary_directory),
+            )
+            dashboard_payload = json.loads(
+                dashboard_path.read_text(encoding="utf-8")
+            )
+
+        answer = answer_question("Which post is strongest?", dashboard_payload)
+
+        self.assertEqual(
+            set(answer),
+            {
+                "summary",
+                "evidence",
+                "recommendation",
+                "suggested_next_action",
+                "limitations",
+                "provider",
+                "llm_called",
+            },
+        )
+        self.assertTrue(answer["evidence"])
+        self.assertIn(
+            dashboard_payload["dataset_overview"]["top_post"]["post_id"],
+            json.dumps(answer),
+        )
+
+    def test_analyst_chat_rejects_missing_dashboard_data(self) -> None:
+        with self.assertRaisesRegex(AnalystChatError, "Dashboard data"):
+            answer_question("What should I do next?", {"posts": []})
 
     def test_phase_2_outputs_are_deterministic(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

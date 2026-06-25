@@ -46,6 +46,28 @@ function formatIds(ids) {
   return ids.length ? ids.join(" · ") : "None";
 }
 
+let latestDashboardData = null;
+
+function renderAnalystAnswer(answer) {
+  setText("answer-summary", answer.summary);
+  setText("answer-recommendation", answer.recommendation);
+  setText("answer-next-action", answer.suggested_next_action);
+  replaceList(
+    "answer-evidence",
+    answer.evidence.map(
+      (item) => `${item.post_id}: ${item.metric} ${item.value}`,
+    ),
+    "li",
+  );
+  replaceList("answer-limitations", answer.limitations || [], "li");
+  setText(
+    "analyst-mode",
+    `${answer.provider || "manual"} analyst · ${
+      answer.llm_called ? "LLM called" : "offline"
+    }`,
+  );
+}
+
 function replaceList(id, items, itemName) {
   const list = document.getElementById(id);
 
@@ -124,6 +146,8 @@ function validateDashboardData(data) {
 }
 
 function renderDashboard(data) {
+  latestDashboardData = data;
+
   const {
     generated_at: generatedAt,
     source,
@@ -250,9 +274,13 @@ function renderDashboard(data) {
 
 async function loadDashboard() {
   try {
-    const response = await fetch("../../outputs/latest/dashboard_data.json", {
-      cache: "no-store",
-    });
+    let response = await fetch("/api/dashboard-data", { cache: "no-store" });
+
+    if (!response.ok) {
+      response = await fetch("../../outputs/latest/dashboard_data.json", {
+        cache: "no-store",
+      });
+    }
 
     if (!response.ok) {
       return;
@@ -269,6 +297,79 @@ async function loadDashboard() {
 }
 
 loadDashboard();
+
+const analystForm = document.getElementById("analyst-form");
+const analystQuestion = document.getElementById("analyst-question");
+const analystClear = document.getElementById("analyst-clear");
+const analystProvider = document.getElementById("analyst-provider");
+
+if (analystForm && analystQuestion) {
+  analystForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!latestDashboardData) {
+      setText(
+        "analyst-status",
+        "Run the backend pipeline first, then refresh this dashboard.",
+      );
+      return;
+    }
+
+    const question = analystQuestion.value;
+    const provider = analystProvider ? analystProvider.value : "manual";
+
+    if (!question.trim()) {
+      setText("analyst-status", "Enter a question before asking the analyst.");
+      return;
+    }
+
+    setText("analyst-status", "Sending question to the analyst server...");
+
+    try {
+      const response = await fetch("/api/analyst-chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ question, provider }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(
+          error.detail ||
+            "The analyst server could not answer from the latest run.",
+        );
+      }
+
+      const answer = await response.json();
+      renderAnalystAnswer(answer);
+      setText("analyst-status", "Answer ready");
+    } catch (error) {
+      setText(
+        "analyst-status",
+        error instanceof Error
+          ? error.message
+          : "Start the FastAPI server with python3 -m src.backend.server.",
+      );
+    }
+  });
+}
+
+if (analystClear) {
+  analystClear.addEventListener("click", () => {
+    if (analystQuestion) {
+      analystQuestion.value = "";
+    }
+
+    setText("answer-summary", "Ask a question to generate a structured analysis.");
+    replaceList("answer-evidence", [], "li");
+    setText("answer-recommendation", "No answer yet.");
+    setText("answer-next-action", "No action yet.");
+    replaceList("answer-limitations", [], "li");
+    setText("analyst-status", "Ready");
+  });
+}
 
 const menuButton = document.querySelector(".menu-button");
 const navigation = document.querySelector("#site-navigation");

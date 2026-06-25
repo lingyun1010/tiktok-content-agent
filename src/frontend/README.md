@@ -1,8 +1,8 @@
 # Frontend dashboard
 
-The Phase 5 dashboard renders one complete backend pipeline result. It does not
-calculate metrics or combine committed examples with real Airtable/provider
-outputs.
+The dashboard renders one complete backend pipeline result and includes the
+Phase 6B analyst chat panel. It does not calculate metrics or combine committed
+examples with real Airtable/provider outputs.
 
 ## Workflow
 
@@ -35,22 +35,40 @@ The run writes the dashboard contract to:
 outputs/latest/dashboard_data.json
 ```
 
-2. Start a local static server from the repository root:
+2. Start the FastAPI server from the repository root:
 
 ```bash
-python3 -m http.server 8000
+python3 -m src.backend.server
 ```
 
 3. Open:
 
 ```text
-http://localhost:8000/src/frontend/
+http://127.0.0.1:8000/
 ```
 
 4. Refresh the browser after each pipeline run.
 
-Use a local server rather than opening `index.html` with `file://`; browser
-security commonly blocks local JSON fetches.
+## Analyst chat
+
+The chat panel posts questions to:
+
+```text
+POST /api/analyst-chat
+```
+
+The server loads `outputs/latest/dashboard_data.json`, compacts it into a safe
+context, and returns structured answers with summary, evidence, recommendation,
+suggested next action, limitations, provider, and LLM-call status.
+
+Supported analyst providers:
+
+- `manual`: deterministic, offline, no API keys
+- `openai`: opt-in, server-side `OPENAI_API_KEY`
+- `claude`: opt-in, server-side `CLAUDE_API_KEY`
+
+The browser never receives provider credentials and never calls OpenAI or
+Claude directly.
 
 ## Missing output
 

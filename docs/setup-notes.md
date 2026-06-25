@@ -100,18 +100,28 @@ placeholder values, and run commands from the repository root. The pipeline
 loads the local `.env` without overriding variables already exported by the
 shell. `.env` is ignored by Git; keep `.env.example` limited to placeholders.
 
-## Frontend preview
+## Frontend and analyst server
 
-After running the pipeline, start a static server from the repository root:
+After running the pipeline, start the FastAPI server from the repository root:
 
 ```bash
-python3 -m http.server 8000
+python3 -m src.backend.server
 ```
 
-Open `http://localhost:8000/src/frontend/`. The dashboard fetches the ignored
-`outputs/latest/dashboard_data.json` written by the latest run. If the file is
-missing or invalid, the page shows generation instructions and no sample
-metrics. Reload the page after each pipeline run.
+Open `http://127.0.0.1:8000/`. The server exposes:
+
+```text
+GET /api/health
+GET /api/dashboard-data
+POST /api/analyst-chat
+```
+
+The dashboard reads the ignored `outputs/latest/dashboard_data.json` through
+`GET /api/dashboard-data`. The analyst chat posts questions to
+`POST /api/analyst-chat`; manual mode is deterministic and offline, while
+OpenAI and Claude are opt-in and use server-side environment variables only.
+If the latest JSON is missing or invalid, the page shows generation
+instructions and no sample metrics. Reload the page after each pipeline run.
 
 See `src/frontend/README.md` for the exact preview and sample-refresh workflow.
 
@@ -120,6 +130,8 @@ See `src/frontend/README.md` for the exact preview and sample-refresh workflow.
 - Run the command from the repository root so Python can resolve `src`.
 - CSV is the default source and requires `--input`.
 - OpenAI requires `OPENAI_API_KEY`; Claude requires `CLAUDE_API_KEY`.
+- Analyst chat requires the FastAPI server for `/api/analyst-chat`; the browser
+  does not call OpenAI or Claude directly.
 - Provider errors never include configured key values.
 - Invalid provider JSON is rejected before strategy files are exported.
 - Airtable requires all four `AIRTABLE_*` variables and omits `--input`.
