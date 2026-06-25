@@ -60,6 +60,7 @@ It currently:
 * supports opt-in `openai` and `claude` strategy providers with validated JSON
 * generates `outputs/latest/dashboard_data.json` for the frontend dashboard
 * includes a responsive static dashboard for reviewing the latest local pipeline output
+* includes a Phase 6A analyst chat panel that answers from the latest dashboard JSON
 * includes an intentionally non-operational TikTok upload placeholder
 * keeps CSV plus the manual provider as the default offline path
 
@@ -246,8 +247,16 @@ The intended dashboard workflow is:
 3. Start a local server.
 4. Open the frontend dashboard.
 5. Review the same data and strategy outputs from that pipeline run.
+6. Ask the analyst chat panel questions about the loaded run.
 
 This avoids a misleading dashboard where sample data appears alongside real provider-generated recommendations.
+
+The Phase 6A analyst chat is a small local/manual analysis layer. It uses the
+same `outputs/latest/dashboard_data.json` payload already loaded by the
+dashboard and returns structured answers with summary, evidence,
+recommendation, and suggested next action. It does not create a separate mock
+dataset, start a backend API server, call OpenAI or Claude, or contact
+Airtable.
 
 ## Airtable field requirements
 
@@ -416,6 +425,7 @@ It displays:
 * generated scripts
 * captions and hashtags
 * human review notes
+* local analyst-chat answers based on the latest dashboard payload
 
 The frontend is intentionally lightweight. It does not require React, Vite, Next.js, authentication, a database, or a backend API server.
 

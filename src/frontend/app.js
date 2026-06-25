@@ -46,6 +46,189 @@ function formatIds(ids) {
   return ids.length ? ids.join(" · ") : "None";
 }
 
+let latestDashboardData = null;
+
+function formatEvidenceValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return "unavailable";
+  }
+
+  if (typeof value === "number" && value <= 1) {
+    return formatPercent(value);
+  }
+
+  return String(value);
+}
+
+function strongestPost(posts) {
+  return [...posts].sort((left, right) => {
+    const leftScore = [
+      left.engagement_rate || 0,
+      left.average_watch_ratio || 0,
+      left.views || 0,
+    ];
+    const rightScore = [
+      right.engagement_rate || 0,
+      right.average_watch_ratio || 0,
+      right.views || 0,
+    ];
+
+    for (let index = 0; index < leftScore.length; index += 1) {
+      if (rightScore[index] !== leftScore[index]) {
+        return rightScore[index] - leftScore[index];
+      }
+    }
+
+    return String(left.post_id).localeCompare(String(right.post_id));
+  })[0];
+}
+
+function weakestRetentionPost(posts) {
+  return posts
+    .filter((post) => post.average_watch_ratio !== null)
+    .sort((left, right) => {
+      if (left.average_watch_ratio !== right.average_watch_ratio) {
+        return left.average_watch_ratio - right.average_watch_ratio;
+      }
+
+      return String(left.post_id).localeCompare(String(right.post_id));
+    })[0];
+}
+
+function buildEvidenceList(items) {
+  return items.map((item) => {
+    if (typeof item === "string") {
+      return item;
+    }
+
+    return `${item.post_id}: ${item.metric} ${formatEvidenceValue(item.value)}`;
+  });
+}
+
+function answerAnalystQuestion(question, data) {
+  const cleanQuestion = question.trim().toLowerCase();
+
+  if (!cleanQuestion) {
+    throw new Error("Enter a question before asking the analyst.");
+  }
+
+  const { posts, signals, content_plan: plan, dataset_overview: summary } = data;
+  const strategy = plan.strategy;
+
+  if (/\b(top|best|strongest|winner|repeat)\b/.test(cleanQuestion)) {
+    const post = strongestPost(posts);
+    return {
+      summary: `${post.post_id} is the strongest evidence point in this run, with ${formatCompact(post.views)} views, ${formatPercent(post.engagement_rate)} engagement, and ${formatPercent(post.average_watch_ratio)} watch ratio.`,
+      evidence: buildEvidenceList([
+        {
+          post_id: post.post_id,
+          metric: "engagement",
+          value: post.engagement_rate,
+        },
+        {
+          post_id: post.post_id,
+          metric: "watch ratio",
+          value: post.average_watch_ratio,
+        },
+        {
+          post_id: "repeat candidates",
+          metric: "post ids",
+          value: signals.repeat_post_ids.join(", ") || "none",
+        },
+      ]),
+      recommendation: strategy.primary_goal,
+      suggested_next_action:
+        "Use this post as the controlled-test source and change one creative variable in the next draft.",
+    };
+  }
+
+  if (/\b(retention|watch|drop|hold|pacing)\b/.test(cleanQuestion)) {
+    const weakest = weakestRetentionPost(posts);
+    const retention = strategy.retention_adjustment;
+    return {
+      summary: retention.affected_post_ids.length
+        ? "Retention needs attention in this run."
+        : "No post is currently flagged for weak retention.",
+      evidence: buildEvidenceList([
+        weakest
+          ? {
+              post_id: weakest.post_id,
+              metric: "lowest watch ratio",
+              value: weakest.average_watch_ratio,
+            }
+          : "No watch-ratio evidence is available.",
+        {
+          post_id: "weak retention",
+          metric: "post ids",
+          value: retention.affected_post_ids.join(", ") || "none",
+        },
+      ]),
+      recommendation: retention.guidance,
+      suggested_next_action:
+        "Shorten the next edit, state the value earlier, and compare watch ratio against this latest run.",
+    };
+  }
+
+  if (/\b(pause|weak|worst|avoid|revise)\b/.test(cleanQuestion)) {
+    const pauseItems = strategy.pause || [];
+
+    if (!pauseItems.length) {
+      return {
+        summary: "No direct pause recommendation is present in this run.",
+        evidence: [],
+        recommendation: "Keep testing the strongest supported pattern.",
+        suggested_next_action:
+          "Review repeat candidates first, then rerun the pipeline after the next batch of posts.",
+      };
+    }
+
+    return {
+      summary: `${pauseItems[0].post_id} is the clearest pause candidate in this run.`,
+      evidence: buildEvidenceList(
+        pauseItems.map((item) => ({
+          post_id: item.post_id,
+          metric: "pause reason",
+          value: item.reason,
+        })),
+      ),
+      recommendation: pauseItems[0].action,
+      suggested_next_action:
+        "Revise the hook, pacing, or audience cue before repeating this format.",
+    };
+  }
+
+  return {
+    summary: `This run analysed ${summary.post_count} posts with ${formatCompact(summary.total_views)} total views. The top post is ${summary.top_post.post_id}.`,
+    evidence: buildEvidenceList([
+      {
+        post_id: summary.top_post.post_id,
+        metric: "top post engagement",
+        value: summary.top_post.engagement_rate,
+      },
+      {
+        post_id: "repeat candidates",
+        metric: "post ids",
+        value: signals.repeat_post_ids.join(", ") || "none",
+      },
+      {
+        post_id: "pause candidates",
+        metric: "post ids",
+        value: signals.pause_post_ids.join(", ") || "none",
+      },
+    ]),
+    recommendation: strategy.primary_goal,
+    suggested_next_action:
+      "Review the recommended content item, then run one controlled creative test before adding more variables.",
+  };
+}
+
+function renderAnalystAnswer(answer) {
+  setText("answer-summary", answer.summary);
+  setText("answer-recommendation", answer.recommendation);
+  setText("answer-next-action", answer.suggested_next_action);
+  replaceList("answer-evidence", answer.evidence, "li");
+}
+
 function replaceList(id, items, itemName) {
   const list = document.getElementById(id);
 
@@ -124,6 +307,8 @@ function validateDashboardData(data) {
 }
 
 function renderDashboard(data) {
+  latestDashboardData = data;
+
   const {
     generated_at: generatedAt,
     source,
@@ -269,6 +454,57 @@ async function loadDashboard() {
 }
 
 loadDashboard();
+
+const analystForm = document.getElementById("analyst-form");
+const analystQuestion = document.getElementById("analyst-question");
+const analystClear = document.getElementById("analyst-clear");
+
+if (analystForm && analystQuestion) {
+  analystForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!latestDashboardData) {
+      setText(
+        "analyst-status",
+        "Run the backend pipeline first, then refresh this dashboard.",
+      );
+      return;
+    }
+
+    const question = analystQuestion.value;
+    setText("analyst-status", "Analysing latest dashboard data...");
+
+    try {
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, 180);
+      });
+      const answer = answerAnalystQuestion(question, latestDashboardData);
+      renderAnalystAnswer(answer);
+      setText("analyst-status", "Answer ready");
+    } catch (error) {
+      setText(
+        "analyst-status",
+        error instanceof Error
+          ? error.message
+          : "The analyst could not answer from this run.",
+      );
+    }
+  });
+}
+
+if (analystClear) {
+  analystClear.addEventListener("click", () => {
+    if (analystQuestion) {
+      analystQuestion.value = "";
+    }
+
+    setText("answer-summary", "Ask a question to generate a structured analysis.");
+    replaceList("answer-evidence", [], "li");
+    setText("answer-recommendation", "No answer yet.");
+    setText("answer-next-action", "No action yet.");
+    setText("analyst-status", "Ready");
+  });
+}
 
 const menuButton = document.querySelector(".menu-button");
 const navigation = document.querySelector("#site-navigation");

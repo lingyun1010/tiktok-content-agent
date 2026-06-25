@@ -34,6 +34,7 @@
         <a href="#signals">Signals</a>
         <a href="#recommendation">Next content</a>
         <a href="#draft">Draft</a>
+        <a href="#analyst-chat">Chat</a>
       </nav>
 
       <div class="header-status">
@@ -431,6 +432,75 @@
                 </li>
               </ul>
             </aside>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="section analyst-section"
+        id="analyst-chat"
+        aria-labelledby="analyst-title"
+      >
+        <div class="section-heading">
+          <div>
+            <p class="overline">AI analyst chat</p>
+            <h2 id="analyst-title">Ask about this run</h2>
+          </div>
+          <span class="draft-label" id="analyst-mode">Manual analyst · offline</span>
+        </div>
+
+        <div class="analyst-layout">
+          <form class="analyst-form" id="analyst-form">
+            <label for="analyst-question">Question</label>
+            <textarea
+              id="analyst-question"
+              name="question"
+              rows="4"
+              placeholder="Which post should I repeat next?"
+              required
+            ></textarea>
+            <div class="analyst-actions">
+              <button class="button button-primary" type="submit">
+                Ask analyst
+              </button>
+              <button
+                class="copy-button"
+                id="analyst-clear"
+                type="button"
+              >
+                Clear
+              </button>
+            </div>
+            <p class="analyst-status" id="analyst-status" aria-live="polite">
+              Ready
+            </p>
+          </form>
+
+          <div class="analyst-answer" id="analyst-answer" aria-live="polite">
+            <p class="overline">Latest answer</p>
+            <h3>Run-level summary</h3>
+            <dl class="answer-grid">
+              <div>
+                <dt>Summary</dt>
+                <dd id="answer-summary">
+                  Ask a question to generate a structured analysis.
+                </dd>
+              </div>
+              <div>
+                <dt>Evidence</dt>
+                <dd>
+                  <ul id="answer-evidence"></ul>
+                </dd>
+              </div>
+              <div>
+                <dt>Recommendation</dt>
+                <dd id="answer-recommendation">No answer yet.</dd>
+              </div>
+              <div>
+                <dt>Suggested next action</dt>
+                <dd id="answer-next-action">No action yet.</dd>
+              </div>
+            </dl>
           </div>
         </div>
       </section>

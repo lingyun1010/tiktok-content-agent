@@ -2,32 +2,32 @@
 
 ## Last updated
 
-2026-06-21
+2026-06-25
 
 ## Current branch
 
-`feature/phase-5-frontend-dashboard`
+`feature/phase-6-ai-analyst-chat`
 
 ## Current phase
 
-Phase 5 dashboard data consistency is implemented and verified.
+Phase 6A AI Analyst Chat MVP is implemented locally.
 
-One pipeline run now produces one complete frontend contract at
-`outputs/latest/dashboard_data.json`. The dashboard fetches only that file and
-renders its dataset overview, safe normalised posts, metrics, signals, provider
-plan, script, caption, hashtags, and review notes.
+The dashboard still uses `outputs/latest/dashboard_data.json` as its single
+source of truth. The Phase 6A chat panel appears inside the existing static
+dashboard and answers questions from the same validated dashboard payload that
+renders the page.
 
-The frontend does not mix committed sample values with generated Airtable,
-OpenAI, Claude, or manual results. When the JSON file is missing or invalid, all
-dashboard visuals are hidden and the page shows only the pipeline commands
-needed to generate it.
+No backend API server was added for this MVP. The chat uses deterministic local
+analysis in the browser, and a matching Python helper validates the structured
+answer shape in automated tests. OpenAI, Claude, Airtable, metrics algorithms,
+publishing code, image generation, scheduling, and TikTok upload logic were not
+changed.
 
 ## Changed files
 
 Backend and tests:
 
-- `src/backend/exporters.py`
-- `src/backend/pipeline.py`
+- `src/backend/analyst_chat.py`
 - `tests/test_pipeline.py`
 
 Frontend:
@@ -35,23 +35,28 @@ Frontend:
 - `src/frontend/index.html`
 - `src/frontend/styles.css`
 - `src/frontend/app.js`
-- `src/frontend/README.md`
-
-Public demo files:
-
-- `examples/sample_content_plan.json`
-- `examples/sample_metrics_summary.md`
 
 Documentation:
 
 - `README.md`
-- `docs/architecture.md`
-- `docs/roadmap.md`
-- `docs/setup-notes.md`
 - `docs/current-checkpoint.md`
 
-No metrics algorithm, Airtable ingestion, provider request logic, credentials,
-publishing code, authentication, API server, or database was changed.
+## Phase 6A chat behaviour
+
+The chat panel:
+
+- is hidden when `outputs/latest/dashboard_data.json` is missing or invalid,
+  because the existing dashboard missing-output state remains active
+- reads from the in-memory dashboard payload loaded by `src/frontend/app.js`
+- supports simple natural-language questions about strongest/repeat posts,
+  retention/watch performance, pause/weak posts, and general run summary
+- returns four structured fields: `summary`, `evidence`, `recommendation`, and
+  `suggested_next_action`
+- has basic loading, empty-question, error, and clear states
+- makes no network or provider call
+
+The backend helper in `src/backend/analyst_chat.py` mirrors the same Phase 6A
+manual-analysis contract for test coverage and future API/provider extraction.
 
 ## Commands verified
 
@@ -59,7 +64,7 @@ publishing code, authentication, API server, or database was changed.
 python3 -m unittest discover -v
 ```
 
-Result: 25 tests passed. One existing optional `python-dotenv` test was skipped
+Result: 27 tests passed. One existing optional `python-dotenv` test was skipped
 because the package is unavailable in the Codex runtime.
 
 ```bash
@@ -70,75 +75,48 @@ python3 -m src.backend.pipeline --mode export_only --source csv \
 Result: completed successfully and generated the five existing demo outputs
 plus `outputs/latest/dashboard_data.json`. No external API was called.
 
-Python compilation, JSON parsing, ignored-output checks, and
-`git diff --check` also passed.
+Additional checks passed:
 
-## Dashboard data contract
+```bash
+python3 -m json.tool outputs/latest/dashboard_data.json
+python3 -m compileall src tests
+git diff --check
+```
 
-The JSON includes:
-
-- UTC `generated_at`
-- source and provider
-- dataset overview
-- safe normalised post summaries
-- metrics-summary path and content
-- validated content plan and path
-- script, caption, hashtags, and human-review notes
-
-It excludes raw Airtable responses, source post captions and URLs, notes,
-credentials, request headers, secrets, and private debug data.
-
-## Frontend verification
-
-Using the documented local server:
+Static serving smoke check passed after an approved local-only server run:
 
 ```bash
 python3 -m http.server 8000
+curl -I http://localhost:8000/src/frontend/
+curl -I http://localhost:8000/src/frontend/app.js
+curl -I http://localhost:8000/outputs/latest/dashboard_data.json
 ```
 
-Verified at `http://localhost:8000/src/frontend/`:
+Result: all three HTTP requests returned `200 OK`; the temporary server was
+stopped after verification.
 
-- the page loaded `outputs/latest/dashboard_data.json`
-- all 10 normalised post rows rendered from the CSV pipeline run
-- source, provider, metric cards, top post, signals, recommendation, and drafts
-  matched the same payload
-- there was no horizontal overflow or browser console error
-- removing the JSON hid all dashboard visuals
-- the missing state displayed `No pipeline output found.` and both example
-  pipeline commands
-- restoring the JSON restored the complete dashboard
-
-## Generated outputs
-
-```text
-outputs/demo/metrics_summary.md
-outputs/demo/content_plan.json
-outputs/demo/script.md
-outputs/demo/caption.txt
-outputs/demo/hashtags.txt
-outputs/latest/dashboard_data.json
-```
-
-All remain ignored by Git.
+JavaScript syntax was not checked with `node --check` because `node` is not
+installed in this Codex runtime.
 
 ## Known issues and limits
 
-- The browser page must be served over localhost; `file://` commonly blocks the
-  JSON fetch.
-- Reload the browser after each pipeline run.
-- The latest run overwrites `outputs/latest/dashboard_data.json` by design.
-- Publishing and media generation remain out of scope.
+- The Phase 6A chat is deterministic/manual, not a live LLM analyst.
+- The chat intentionally handles only a small set of common question intents.
+- The browser and Python helper currently duplicate the manual answer rules at
+  a small scale. A future API-based phase can centralise this logic.
+- The dashboard still needs to be served over localhost so it can fetch
+  `outputs/latest/dashboard_data.json`.
+- `outputs/latest/dashboard_data.json` remains ignored and overwritten by each
+  successful pipeline run.
 
 ## Next recommended task
 
-Run the desired Airtable/provider command, start the local server, and refresh
-the dashboard. Do not call OpenAI or Claude again unless a fresh provider result
-is intentionally required.
+Run the offline test suite and sample pipeline. If verified, commit the Phase
+6A MVP. A later Phase 6B can add a tiny local API or opt-in OpenAI/Claude
+analyst provider using the same structured response fields.
 
 Suggested commit:
 
 ```text
-Fix dashboard pipeline data consistency
+Add local AI analyst chat MVP
 ```
-
-Do not push or merge without a separate instruction.
