@@ -62,6 +62,7 @@ It currently:
 * includes a responsive static dashboard for reviewing the latest local pipeline output
 * includes a Phase 6B analyst chat panel backed by a minimal FastAPI server
 * includes an internal analyst tool-calling layer with an optional ReAct-like trace
+* includes an offline analyst evaluation harness for deterministic regression checks
 * includes an intentionally non-operational TikTok upload placeholder
 * keeps CSV plus the manual provider as the default offline path
 
@@ -312,6 +313,29 @@ short factual observations, and limitations. It does not expose hidden
 chain-of-thought. Keeping the trace structured makes the analyst flow easier to
 test, review, and explain in AI Engineer interviews while the project remains
 local-first and portfolio-focused rather than SaaS.
+
+## Analyst evaluation harness
+
+Run the offline analyst eval from the repository root:
+
+```
+python3 -m src.backend.evaluate_analyst
+```
+
+The harness loads synthetic fixtures from `tests/fixtures/`, asks the manual
+analyst provider representative questions, and checks response schema, evidence,
+limitations, interpreted intent, tools used, short factual trace observations,
+`provider == "manual"`, and `llm_called == false`.
+
+It covers best-performing posts, hook reuse, pause or avoid guidance, retention
+improvement, underperforming posts, posts stuck around 90 views, unsupported
+causality or distribution questions, and a general summary.
+
+This is an offline eval, not a benchmark of model quality. It does not prove
+future performance, diagnose TikTok distribution, or call OpenAI or Claude. Its
+purpose is to make agent behaviour testable: tool use can be evaluated,
+unsupported questions trigger explicit limitations, and deterministic manual
+answers can be regression-tested without LLM calls.
 
 ## Airtable field requirements
 

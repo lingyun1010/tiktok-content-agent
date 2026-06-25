@@ -1,0 +1,201 @@
+{
+  "generated_at": "2026-06-25T00:00:00+00:00",
+  "source": "tests/fixtures/analyst_dashboard_data.json",
+  "provider": "manual",
+  "dataset_overview": {
+    "post_count": 5,
+    "total_views": 4970,
+    "average_views": 994,
+    "average_engagement_rate": 0.113,
+    "average_watch_ratio": 0.55,
+    "top_post": {
+      "post_id": "eval-004",
+      "format": "Product demo",
+      "topic": "Routine",
+      "hook": "Your wash day needs one less step",
+      "views": 2400,
+      "engagement_rate": 0.165,
+      "average_watch_ratio": 0.72,
+      "region_match_score": 0.82,
+      "signals": [
+        "repeat_candidate"
+      ]
+    }
+  },
+  "posts": [
+    {
+      "post_id": "eval-001",
+      "format": "Talking head",
+      "topic": "Education",
+      "hook": "Stop guessing your curl routine",
+      "views": 960,
+      "engagement_rate": 0.118,
+      "average_watch_ratio": 0.61,
+      "region_match_score": 0.7,
+      "signals": [
+        "repeat_candidate"
+      ]
+    },
+    {
+      "post_id": "eval-002",
+      "format": "Before after",
+      "topic": "Results",
+      "hook": "The difference after one wash",
+      "views": 90,
+      "engagement_rate": 0.044,
+      "average_watch_ratio": 0.31,
+      "region_match_score": 0.58,
+      "signals": [
+        "pause_candidate",
+        "weak_retention"
+      ]
+    },
+    {
+      "post_id": "eval-003",
+      "format": "Ingredient explainer",
+      "topic": "Ingredients",
+      "hook": "Why this herb is in the formula",
+      "views": 430,
+      "engagement_rate": 0.072,
+      "average_watch_ratio": 0.42,
+      "region_match_score": 0.44,
+      "signals": [
+        "pause_candidate",
+        "wrong_region_distribution"
+      ]
+    },
+    {
+      "post_id": "eval-004",
+      "format": "Product demo",
+      "topic": "Routine",
+      "hook": "Your wash day needs one less step",
+      "views": 2400,
+      "engagement_rate": 0.165,
+      "average_watch_ratio": 0.72,
+      "region_match_score": 0.82,
+      "signals": [
+        "repeat_candidate"
+      ]
+    },
+    {
+      "post_id": "eval-005",
+      "format": "Founder story",
+      "topic": "Brand story",
+      "hook": "The ritual behind the bottle",
+      "views": 1090,
+      "engagement_rate": 0.116,
+      "average_watch_ratio": 0.67,
+      "region_match_score": 0.76,
+      "signals": []
+    }
+  ],
+  "signals": {
+    "repeat_post_ids": [
+      "eval-004",
+      "eval-001"
+    ],
+    "pause_post_ids": [
+      "eval-002",
+      "eval-003"
+    ],
+    "weak_retention_post_ids": [
+      "eval-002",
+      "eval-003"
+    ]
+  },
+  "metrics_summary": {
+    "path": "outputs/demo/metrics_summary.md",
+    "content": "# Synthetic analyst evaluation metrics summary\n"
+  },
+  "content_plan_path": "outputs/demo/content_plan.json",
+  "content_plan": {
+    "version": "1.0",
+    "provider": "manual",
+    "llm_called": false,
+    "strategy": {
+      "primary_goal": "Repeat the strongest routine demo while changing one creative variable.",
+      "repeat": {
+        "source_post_id": "eval-004",
+        "format": "Product demo",
+        "topic": "Routine",
+        "reason": "The post combines above-average engagement and retention."
+      },
+      "pause": [
+        {
+          "post_id": "eval-002",
+          "reason": "Low views and weak retention.",
+          "action": "Pause direct repetition until the opening and pacing are revised."
+        }
+      ],
+      "retention_adjustment": {
+        "required": true,
+        "affected_post_ids": [
+          "eval-002",
+          "eval-003"
+        ],
+        "guidance": "Move the value proposition into the first three seconds and cut slower middle sections."
+      }
+    },
+    "content_item": {
+      "id": "eval-plan-001",
+      "working_title": "One less wash-day step",
+      "format": "Product demo",
+      "topic": "Routine",
+      "source_post_id": "eval-004",
+      "creative_direction": "Keep the simple routine promise and test a clearer first line.",
+      "script": {
+        "hook": "Your wash day might need one less step.",
+        "body": [
+          "Show the simplified routine.",
+          "Explain the practical benefit.",
+          "Invite viewers to compare it with their current routine."
+        ],
+        "cta": "Save this before your next wash day."
+      },
+      "caption": "A simpler routine to test next wash day.",
+      "hashtags": [
+        "#HairCareTips",
+        "#WashDayRoutine"
+      ],
+      "review_checks": [
+        "Confirm the demo matches the actual product directions.",
+        "Review claims before publishing."
+      ]
+    },
+    "analysis_basis": {
+      "repeat_candidate_post_ids": [
+        "eval-004",
+        "eval-001"
+      ],
+      "pause_candidate_post_ids": [
+        "eval-002",
+        "eval-003"
+      ],
+      "weak_retention_post_ids": [
+        "eval-002",
+        "eval-003"
+      ]
+    },
+    "limitations": [
+      "Synthetic fixture for deterministic offline analyst evaluation."
+    ]
+  },
+  "script": {
+    "hook": "Your wash day might need one less step.",
+    "body": [
+      "Show the simplified routine.",
+      "Explain the practical benefit.",
+      "Invite viewers to compare it with their current routine."
+    ],
+    "cta": "Save this before your next wash day."
+  },
+  "caption": "A simpler routine to test next wash day.",
+  "hashtags": [
+    "#HairCareTips",
+    "#WashDayRoutine"
+  ],
+  "human_review_note": [
+    "Confirm the demo matches the actual product directions.",
+    "Review claims before publishing."
+  ]
+}

@@ -1,0 +1,114 @@
+[
+  {
+    "id": "best_posts",
+    "question": "Which posts performed best recently?",
+    "expected_intent": "best_performing_posts",
+    "expected_tools": [
+      "get_top_posts"
+    ],
+    "expect_evidence": true,
+    "expect_limitations": true,
+    "expected_provider": "manual",
+    "expected_llm_called": false
+  },
+  {
+    "id": "hook_reuse",
+    "question": "Which hook should I reuse?",
+    "expected_intent": "hook_reuse",
+    "expected_tools": [
+      "get_repeat_candidates"
+    ],
+    "expect_evidence": true,
+    "expect_limitations": true,
+    "expected_provider": "manual",
+    "expected_llm_called": false
+  },
+  {
+    "id": "pause_or_avoid",
+    "question": "What should I avoid or pause?",
+    "expected_intent": "pause_or_avoid",
+    "expected_tools": [
+      "get_pause_candidates"
+    ],
+    "expect_evidence": true,
+    "expect_limitations": true,
+    "expected_provider": "manual",
+    "expected_llm_called": false
+  },
+  {
+    "id": "retention_improvement",
+    "question": "How should I improve retention?",
+    "expected_intent": "retention_issues",
+    "expected_tools": [
+      "get_retention_issues"
+    ],
+    "expect_evidence": true,
+    "expect_limitations": true,
+    "expected_provider": "manual",
+    "expected_llm_called": false
+  },
+  {
+    "id": "underperforming_posts",
+    "question": "Which posts are underperforming?",
+    "expected_intent": "underperforming_or_low_views",
+    "expected_tools": [
+      "get_underperforming_posts"
+    ],
+    "expect_evidence": true,
+    "expect_limitations": true,
+    "expected_limitation_keywords": [
+      "impressions",
+      "traffic source",
+      "distribution"
+    ],
+    "expected_provider": "manual",
+    "expected_llm_called": false
+  },
+  {
+    "id": "views_plateau_90",
+    "question": "Why are some posts stuck around 90 views?",
+    "expected_intent": "underperforming_or_low_views",
+    "expected_tools": [
+      "get_underperforming_posts"
+    ],
+    "expect_evidence": true,
+    "expect_limitations": true,
+    "expected_limitation_keywords": [
+      "impressions",
+      "traffic source",
+      "distribution"
+    ],
+    "expected_provider": "manual",
+    "expected_llm_called": false
+  },
+  {
+    "id": "unsupported_causality_distribution",
+    "question": "Why can't you tell whether distribution caused the low views?",
+    "expected_intent": "underperforming_or_low_views",
+    "expected_tools": [
+      "get_underperforming_posts"
+    ],
+    "expect_evidence": true,
+    "expect_limitations": true,
+    "expected_limitation_keywords": [
+      "impressions",
+      "traffic source",
+      "causation",
+      "distribution"
+    ],
+    "expected_provider": "manual",
+    "expected_llm_called": false
+  },
+  {
+    "id": "general_summary",
+    "question": "Give me the general summary.",
+    "expected_intent": "general_summary",
+    "expected_tools": [
+      "get_dashboard_summary"
+    ],
+    "expect_evidence": true,
+    "expect_limitations": true,
+    "expected_provider": "manual",
+    "expected_llm_called": false
+  }
+]

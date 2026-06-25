@@ -6,13 +6,12 @@
 
 ## Current branch
 
-`feature/analyst-tool-trace`
+`main`
 
 ## Current phase
 
-Portfolio milestone: Internal Analyst Tool Calling Layer + ReAct-like Tool
-Trace is implemented on top of the existing Phase 6B FastAPI analyst server and
-dashboard UI.
+Portfolio milestone: Analyst Evaluation Harness is implemented on top of the
+existing deterministic manual analyst flow and ReAct-like tool trace.
 
 The project remains a local-first AI Engineer portfolio project, not a SaaS
 product. The existing `POST /api/analyst-chat` endpoint is preserved. No auth,
@@ -52,10 +51,41 @@ Documentation:
 - `README.md`
 - `docs/current-checkpoint.md`
 
+New evaluation harness files:
+
+- `src/backend/evaluate_analyst.py`
+- `tests/fixtures/analyst_eval_cases.json`
+- `tests/fixtures/analyst_dashboard_data.json`
+- `tests/test_evaluate_analyst.py`
+
 Generated local outputs were refreshed by the sample pipeline but remain under
 ignored `outputs/` paths.
 
 ## Implemented behaviour
+
+Added a lightweight offline analyst evaluation harness:
+
+- loads synthetic dashboard data from `tests/fixtures/analyst_dashboard_data.json`
+- loads eval cases from `tests/fixtures/analyst_eval_cases.json`
+- calls `answer_question(question, dashboard_data, provider="manual")`
+- validates required response fields, evidence, limitations, provider, and
+  `llm_called`
+- validates interpreted intent and expected tools in `trace`
+- checks trace observations are lists of short factual strings
+- rejects hidden reasoning language in trace observations
+- prints a readable pass/fail report
+- exits non-zero if any case fails
+
+Evaluation cases cover:
+
+- best performing posts
+- hook reuse
+- pause / avoid
+- retention improvement
+- underperforming posts
+- posts stuck around 90 views
+- unsupported causality / distribution question
+- general summary
 
 Added deterministic internal analyst tools over dashboard data:
 
@@ -130,6 +160,22 @@ when `trace` is present. Older responses without trace continue to display.
 
 ## Commands verified
 
+Analyst evaluation harness:
+
+```bash
+.venv/bin/python -m src.backend.evaluate_analyst
+```
+
+Result: 8/8 eval cases passed.
+
+Focused evaluation tests:
+
+```bash
+.venv/bin/python -m unittest tests.test_evaluate_analyst -v
+```
+
+Result: 5 tests passed.
+
 Related tests:
 
 ```bash
@@ -144,7 +190,7 @@ Full test suite:
 .venv/bin/python -m unittest discover -v
 ```
 
-Result: 56 tests passed.
+Result: 61 tests passed.
 
 Sample pipeline:
 
@@ -165,6 +211,8 @@ Additional checks:
 
 ```bash
 .venv/bin/python -m json.tool outputs/latest/dashboard_data.json
+.venv/bin/python -m json.tool tests/fixtures/analyst_eval_cases.json
+.venv/bin/python -m json.tool tests/fixtures/analyst_dashboard_data.json
 .venv/bin/python -m compileall src tests
 git diff --check
 ```
@@ -173,6 +221,10 @@ Result: all passed.
 
 ## Known issues and limits
 
+- The eval harness is an offline deterministic regression check, not a model
+  quality benchmark.
+- The eval fixture is synthetic and safe to publish; it does not represent a
+  real TikTok account or private brand performance data.
 - OpenAI and Claude analyst providers still accept optional trace in validation,
   but the deterministic tool trace is implemented for manual analyst mode only.
 - The trace records tool-use summaries and observations only; it deliberately
@@ -198,13 +250,6 @@ Result: all passed.
 
 ## Next recommended task
 
-Build an analyst evaluation harness for the five expected manual demo questions:
-
-- Which posts performed best recently?
-- Which hook should I reuse?
-- What should I avoid or pause?
-- How should I improve retention?
-- Why are some posts stuck around 90 views?
-
-The harness should snapshot structured answer fields and trace fields against
-small deterministic dashboard fixtures, without calling external providers.
+Broaden the analyst evaluation harness only when the manual analyst grows new
+supported intents or the dashboard contract changes. Keep it offline and
+fixture-driven so it remains useful as a portfolio regression test.
