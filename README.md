@@ -60,7 +60,7 @@ It currently:
 * supports opt-in `openai` and `claude` strategy providers with validated JSON
 * generates `outputs/latest/dashboard_data.json` for the frontend dashboard
 * includes a responsive static dashboard for reviewing the latest local pipeline output
-* includes a Phase 6A analyst chat panel that answers from the latest dashboard JSON
+* includes a Phase 6B analyst chat panel backed by a minimal FastAPI server
 * includes an intentionally non-operational TikTok upload placeholder
 * keeps CSV plus the manual provider as the default offline path
 
@@ -218,19 +218,26 @@ The Airtable, OpenAI, and Claude integrations are opt-in and make network reques
 
 ## Frontend dashboard
 
-After running the pipeline, start a local server from the repository root:
+After running the pipeline, start the FastAPI dashboard server from the
+repository root:
 
 ```
-python3 -m http.server 8000
+python3 -m src.backend.server
 ```
 
 Then open:
 
 ```
-http://localhost:8000/src/frontend/
+http://127.0.0.1:8000/
 ```
 
-The framework-free dashboard reads only:
+The dashboard reads the latest pipeline output through:
+
+```
+GET /api/dashboard-data
+```
+
+That endpoint reads only:
 
 ```
 outputs/latest/dashboard_data.json
@@ -244,19 +251,36 @@ The intended dashboard workflow is:
 
 1. Run the backend pipeline.
 2. Backend writes `outputs/latest/dashboard_data.json`.
-3. Start a local server.
+3. Start the FastAPI server.
 4. Open the frontend dashboard.
 5. Review the same data and strategy outputs from that pipeline run.
 6. Ask the analyst chat panel questions about the loaded run.
 
 This avoids a misleading dashboard where sample data appears alongside real provider-generated recommendations.
 
-The Phase 6A analyst chat is a small local/manual analysis layer. It uses the
-same `outputs/latest/dashboard_data.json` payload already loaded by the
-dashboard and returns structured answers with summary, evidence,
-recommendation, and suggested next action. It does not create a separate mock
-dataset, start a backend API server, call OpenAI or Claude, or contact
-Airtable.
+Phase 6A was a small offline/manual browser analyst. Phase 6B moves the analyst
+logic behind a minimal FastAPI backend so API keys stay server-side. The
+frontend now posts analyst questions to:
+
+```
+POST /api/analyst-chat
+```
+
+The request body is:
+
+```json
+{
+  "question": "Which posts performed best recently?",
+  "provider": "manual"
+}
+```
+
+Supported analyst providers are `manual`, `openai`, and `claude`. `manual` is
+deterministic and offline. `openai` and `claude` are opt-in only, read keys from
+the server environment or ignored local `.env`, and receive only compacted
+`outputs/latest/dashboard_data.json` context. Analyst responses return
+structured JSON with `summary`, `evidence`, `recommendation`,
+`suggested_next_action`, `limitations`, `provider`, and `llm_called`.
 
 ## Airtable field requirements
 
@@ -340,16 +364,23 @@ Metrics summary     Strategy provider
     +---------+---------+
               |
               v
-       Generated outputs
+      Generated outputs
               |
               v
    outputs/latest/dashboard_data.json
               |
               v
-      Static dashboard
+      FastAPI server
+              |
+              v
+      Static dashboard + analyst chat
 ```
 
-The backend owns ingestion, validation, metrics, strategy generation, and export. The static frontend presents the latest local pipeline output from `outputs/latest/dashboard_data.json`; it does not calculate metrics or independently mix sample data with real provider output.
+The backend owns ingestion, validation, metrics, strategy generation, export,
+and analyst chat. The frontend presents the latest local pipeline output from
+`outputs/latest/dashboard_data.json`; it does not calculate metrics or
+independently mix sample data with real provider output. Analyst chat answers
+are grounded in that same dashboard JSON.
 
 ## Metrics
 
@@ -427,9 +458,11 @@ It displays:
 * human review notes
 * local analyst-chat answers based on the latest dashboard payload
 
-The frontend is intentionally lightweight. It does not require React, Vite, Next.js, authentication, a database, or a backend API server.
+The frontend is intentionally lightweight. It does not require React, Vite,
+Next.js, authentication, or a database. Phase 6B uses a minimal FastAPI server
+only for latest-data access and analyst chat.
 
-It reads the single latest result written to:
+It reads the single latest result through the FastAPI API, which loads:
 
 ```
 outputs/latest/dashboard_data.json

@@ -451,6 +451,12 @@
 
         <div class="analyst-layout">
           <form class="analyst-form" id="analyst-form">
+            <label for="analyst-provider">Provider</label>
+            <select id="analyst-provider" name="provider">
+              <option value="manual">Manual</option>
+              <option value="openai">OpenAI</option>
+              <option value="claude">Claude</option>
+            </select>
             <label for="analyst-question">Question</label>
             <textarea
               id="analyst-question"
@@ -499,6 +505,12 @@
               <div>
                 <dt>Suggested next action</dt>
                 <dd id="answer-next-action">No action yet.</dd>
+              </div>
+              <div>
+                <dt>Limitations</dt>
+                <dd>
+                  <ul id="answer-limitations"></ul>
+                </dd>
               </div>
             </dl>
           </div>

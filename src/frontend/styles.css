@@ -978,10 +978,9 @@ td.numeric {
   text-transform: uppercase;
 }
 
-.analyst-form textarea {
+.analyst-form textarea,
+.analyst-form select {
   width: 100%;
-  min-height: 128px;
-  resize: vertical;
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -992,7 +991,17 @@ td.numeric {
   line-height: 1.55;
 }
 
-.analyst-form textarea:focus {
+.analyst-form textarea {
+  min-height: 128px;
+  resize: vertical;
+}
+
+.analyst-form select {
+  min-height: 48px;
+}
+
+.analyst-form textarea:focus,
+.analyst-form select:focus {
   outline: 3px solid var(--amber);
   outline-offset: 2px;
 }

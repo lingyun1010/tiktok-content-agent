@@ -10,24 +10,26 @@
 
 ## Current phase
 
-Phase 6A AI Analyst Chat MVP is implemented locally.
+Phase 6B Minimal FastAPI Analyst Server + UI Integration is implemented.
 
-The dashboard still uses `outputs/latest/dashboard_data.json` as its single
-source of truth. The Phase 6A chat panel appears inside the existing static
-dashboard and answers questions from the same validated dashboard payload that
-renders the page.
+Phase 6A introduced an offline/manual analyst chat in the static frontend using
+local rules over `outputs/latest/dashboard_data.json`. Phase 6B moves analyst
+chat behind a minimal FastAPI server so the browser can call backend analyst
+logic and optional LLM providers without exposing API keys.
 
-No backend API server was added for this MVP. The chat uses deterministic local
-analysis in the browser, and a matching Python helper validates the structured
-answer shape in automated tests. OpenAI, Claude, Airtable, metrics algorithms,
-publishing code, image generation, scheduling, and TikTok upload logic were not
-changed.
+The dashboard remains grounded in `outputs/latest/dashboard_data.json`. The
+pipeline still writes that file, and the server reads it for both
+`GET /api/dashboard-data` and `POST /api/analyst-chat`.
 
 ## Changed files
 
 Backend and tests:
 
+- `src/backend/analyst.py`
 - `src/backend/analyst_chat.py`
+- `src/backend/server.py`
+- `tests/test_analyst.py`
+- `tests/test_server.py`
 - `tests/test_pipeline.py`
 
 Frontend:
@@ -35,40 +37,104 @@ Frontend:
 - `src/frontend/index.html`
 - `src/frontend/styles.css`
 - `src/frontend/app.js`
+- `src/frontend/README.md`
 
-Documentation:
+Documentation and dependencies:
 
 - `README.md`
 - `docs/current-checkpoint.md`
+- `requirements.txt`
 
-## Phase 6A chat behaviour
+No Airtable ingestion, metrics algorithms, strategy generation transport,
+publishing code, TikTok upload placeholder, media generation, scheduling,
+database, or authentication architecture was changed.
 
-The chat panel:
+## Phase 6B API
 
-- is hidden when `outputs/latest/dashboard_data.json` is missing or invalid,
-  because the existing dashboard missing-output state remains active
-- reads from the in-memory dashboard payload loaded by `src/frontend/app.js`
-- supports simple natural-language questions about strongest/repeat posts,
-  retention/watch performance, pause/weak posts, and general run summary
-- returns four structured fields: `summary`, `evidence`, `recommendation`, and
-  `suggested_next_action`
-- has basic loading, empty-question, error, and clear states
-- makes no network or provider call
-
-The backend helper in `src/backend/analyst_chat.py` mirrors the same Phase 6A
-manual-analysis contract for test coverage and future API/provider extraction.
-
-## Commands verified
-
-```bash
-python3 -m unittest discover -v
-```
-
-Result: 27 tests passed. One existing optional `python-dotenv` test was skipped
-because the package is unavailable in the Codex runtime.
+Run the pipeline first:
 
 ```bash
 python3 -m src.backend.pipeline --mode export_only --source csv \
+  --input examples/sample_recent_posts.csv --limit 10 --provider manual
+```
+
+Then start the server:
+
+```bash
+python3 -m src.backend.server
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000/
+```
+
+Endpoints:
+
+- `GET /api/health`
+- `GET /api/dashboard-data`
+- `POST /api/analyst-chat`
+
+`POST /api/analyst-chat` accepts:
+
+```json
+{
+  "question": "Which posts performed best recently?",
+  "provider": "manual"
+}
+```
+
+Supported analyst providers:
+
+- `manual`: deterministic local rules, no external API
+- `openai`: opt-in, server-side `OPENAI_API_KEY`
+- `claude`: opt-in, server-side `CLAUDE_API_KEY`
+
+All providers return:
+
+- `summary`
+- `evidence`
+- `recommendation`
+- `suggested_next_action`
+- `limitations`
+- `provider`
+- `llm_called`
+
+## Analyst grounding
+
+The analyst module loads `outputs/latest/dashboard_data.json`, validates the
+expected dashboard fields, and compacts the payload into a safe context before
+any LLM call. The safe context excludes raw Airtable responses, post URLs,
+source captions, notes, credentials, request headers, and secrets.
+
+OpenAI and Claude analyst providers reuse the existing standard-library HTTP
+pattern from `llm_strategy.py`, require valid JSON responses, and validate the
+structured answer before returning it to the frontend. The frontend never sees
+API keys and never calls provider APIs directly.
+
+## Commands verified
+
+Dependencies were installed into ignored local `.venv/` because the system
+Python is externally managed:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+```
+
+Full test suite:
+
+```bash
+.venv/bin/python -m unittest discover -v
+```
+
+Result: 40 tests passed.
+
+Sample pipeline:
+
+```bash
+.venv/bin/python -m src.backend.pipeline --mode export_only --source csv \
   --input examples/sample_recent_posts.csv --limit 10 --provider manual
 ```
 
@@ -78,45 +144,39 @@ plus `outputs/latest/dashboard_data.json`. No external API was called.
 Additional checks passed:
 
 ```bash
-python3 -m json.tool outputs/latest/dashboard_data.json
-python3 -m compileall src tests
+.venv/bin/python -m compileall src tests
+.venv/bin/python -m json.tool outputs/latest/dashboard_data.json
 git diff --check
 ```
 
-Static serving smoke check passed after an approved local-only server run:
-
-```bash
-python3 -m http.server 8000
-curl -I http://localhost:8000/src/frontend/
-curl -I http://localhost:8000/src/frontend/app.js
-curl -I http://localhost:8000/outputs/latest/dashboard_data.json
-```
-
-Result: all three HTTP requests returned `200 OK`; the temporary server was
-stopped after verification.
-
-JavaScript syntax was not checked with `node --check` because `node` is not
-installed in this Codex runtime.
+FastAPI unit tests covered `GET /api/health`, `GET /api/dashboard-data`, and
+`POST /api/analyst-chat` in manual mode. A live curl smoke check against the
+temporary server could not be completed because the approval system rejected
+the local curl requests due to usage-limit policy after the server started.
+The temporary server was stopped cleanly.
 
 ## Known issues and limits
 
-- The Phase 6A chat is deterministic/manual, not a live LLM analyst.
-- The chat intentionally handles only a small set of common question intents.
-- The browser and Python helper currently duplicate the manual answer rules at
-  a small scale. A future API-based phase can centralise this logic.
-- The dashboard still needs to be served over localhost so it can fetch
-  `outputs/latest/dashboard_data.json`.
-- `outputs/latest/dashboard_data.json` remains ignored and overwritten by each
-  successful pipeline run.
+- Manual analyst mode is deterministic and handles a small set of common
+  question intents.
+- OpenAI and Claude analyst modes are implemented but were not called live
+  during verification.
+- The safe LLM context is intentionally compact; it cannot answer questions
+  needing impressions, traffic source, follower status, current trend/audio
+  metadata, or TikTok distribution diagnostics.
+- Browser and backend no longer share local analyst rules; the frontend depends
+  on the FastAPI server for chat answers.
+- The test run emitted a FastAPI/Starlette deprecation warning about the test
+  client using `httpx`; tests still passed.
 
 ## Next recommended task
 
-Run the offline test suite and sample pipeline. If verified, commit the Phase
-6A MVP. A later Phase 6B can add a tiny local API or opt-in OpenAI/Claude
-analyst provider using the same structured response fields.
+Manually open `http://127.0.0.1:8000/`, test the five manual questions, and then
+optionally test OpenAI/Claude with server-side `.env` keys. Do not call paid
+providers unless a fresh live-provider result is intentional.
 
 Suggested commit:
 
 ```text
-Add local AI analyst chat MVP
+Add FastAPI analyst chat server
 ```

@@ -599,7 +599,15 @@ class PipelineTest(unittest.TestCase):
 
         self.assertEqual(
             set(answer),
-            {"summary", "evidence", "recommendation", "suggested_next_action"},
+            {
+                "summary",
+                "evidence",
+                "recommendation",
+                "suggested_next_action",
+                "limitations",
+                "provider",
+                "llm_called",
+            },
         )
         self.assertTrue(answer["evidence"])
         self.assertIn(
