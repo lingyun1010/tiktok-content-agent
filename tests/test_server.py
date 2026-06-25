@@ -59,6 +59,8 @@ class AnalystServerTest(unittest.TestCase):
         self.assertFalse(payload["llm_called"])
         self.assertIn("summary", payload)
         self.assertTrue(payload["evidence"])
+        self.assertEqual(payload["trace"]["interpreted_intent"], "best_performing_posts")
+        self.assertIn("get_top_posts", payload["trace"]["tools_used"])
 
     def test_analyst_chat_endpoint_reports_missing_dashboard_data(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

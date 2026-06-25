@@ -61,6 +61,7 @@ It currently:
 * generates `outputs/latest/dashboard_data.json` for the frontend dashboard
 * includes a responsive static dashboard for reviewing the latest local pipeline output
 * includes a Phase 6B analyst chat panel backed by a minimal FastAPI server
+* includes an internal analyst tool-calling layer with an optional ReAct-like trace
 * includes an intentionally non-operational TikTok upload placeholder
 * keeps CSV plus the manual provider as the default offline path
 
@@ -284,6 +285,34 @@ the server environment or ignored local `.env`, and receive only compacted
 structured JSON with `summary`, `evidence`, `recommendation`,
 `suggested_next_action`, `limitations`, `provider`, and `llm_called`.
 
+Phase 7 adds an internal analyst tool-calling layer for portfolio visibility.
+The tools are deterministic Python functions over `outputs/latest/dashboard_data.json`;
+they are not external API function calling, SaaS integrations, or browser-side
+clients. The manual analyst uses these tools to collect grounded observations
+for common questions about best posts, hook reuse, pause candidates, retention,
+and underperforming posts.
+
+Manual analyst responses may include an optional `trace` object:
+
+```json
+{
+  "interpreted_intent": "best_performing_posts",
+  "tools_used": ["get_top_posts"],
+  "observations": [
+    "demo-004 had the highest engagement rate among the loaded posts."
+  ],
+  "limitations": [
+    "Grounded only in outputs/latest/dashboard_data.json."
+  ]
+}
+```
+
+This trace is ReAct-like because it records the interpreted intent, tools used,
+short factual observations, and limitations. It does not expose hidden
+chain-of-thought. Keeping the trace structured makes the analyst flow easier to
+test, review, and explain in AI Engineer interviews while the project remains
+local-first and portfolio-focused rather than SaaS.
+
 ## Airtable field requirements
 
 The Airtable source should contain one record per TikTok post.
@@ -376,13 +405,18 @@ Metrics summary     Strategy provider
               |
               v
       Static dashboard + analyst chat
+              |
+              v
+      Internal analyst tools + trace
 ```
 
 The backend owns ingestion, validation, metrics, strategy generation, export,
 and analyst chat. The frontend presents the latest local pipeline output from
 `outputs/latest/dashboard_data.json`; it does not calculate metrics or
 independently mix sample data with real provider output. Analyst chat answers
-are grounded in that same dashboard JSON.
+are grounded in that same dashboard JSON. In manual mode, the analyst calls
+typed internal tools rather than scattering dashboard lookups across response
+branches.
 
 ## Metrics
 

@@ -60,8 +60,98 @@ class AnalystProviderTest(unittest.TestCase):
 
         self.assertEqual(answer["provider"], "manual")
         self.assertFalse(answer["llm_called"])
+        for field in (
+            "summary",
+            "evidence",
+            "recommendation",
+            "suggested_next_action",
+            "limitations",
+            "provider",
+            "llm_called",
+        ):
+            self.assertIn(field, answer)
+        self.assertTrue(answer["evidence"])
+        self.assertEqual(answer["trace"]["interpreted_intent"], "best_performing_posts")
+        self.assertIn("get_top_posts", answer["trace"]["tools_used"])
+
+    def test_manual_best_question_returns_top_post_trace(self) -> None:
+        answer = answer_question(
+            "Which posts performed best recently?",
+            self.dashboard,
+            provider="manual",
+        )
+
+        self.assertEqual(answer["provider"], "manual")
+        self.assertFalse(answer["llm_called"])
+        self.assertEqual(answer["trace"]["interpreted_intent"], "best_performing_posts")
+        self.assertEqual(answer["trace"]["tools_used"], ["get_top_posts"])
+
+    def test_manual_hook_reuse_question_returns_repeat_trace(self) -> None:
+        answer = answer_question(
+            "Which hook should I reuse?",
+            self.dashboard,
+            provider="manual",
+        )
+
+        self.assertEqual(answer["provider"], "manual")
+        self.assertFalse(answer["llm_called"])
+        self.assertEqual(answer["trace"]["interpreted_intent"], "hook_reuse")
+        self.assertIn("get_repeat_candidates", answer["trace"]["tools_used"])
+
+    def test_manual_pause_question_returns_pause_trace(self) -> None:
+        answer = answer_question(
+            "What should I avoid or pause?",
+            self.dashboard,
+            provider="manual",
+        )
+
+        self.assertEqual(answer["provider"], "manual")
+        self.assertFalse(answer["llm_called"])
+        self.assertEqual(answer["trace"]["interpreted_intent"], "pause_or_avoid")
+        self.assertTrue(
+            {
+                "get_pause_candidates",
+                "get_underperforming_posts",
+            }.intersection(answer["trace"]["tools_used"])
+        )
+
+    def test_manual_retention_question_returns_retention_trace(self) -> None:
+        answer = answer_question(
+            "How should I improve retention?",
+            self.dashboard,
+            provider="manual",
+        )
+
+        self.assertEqual(answer["provider"], "manual")
+        self.assertFalse(answer["llm_called"])
+        self.assertEqual(answer["trace"]["interpreted_intent"], "retention_issues")
+        self.assertEqual(answer["trace"]["tools_used"], ["get_retention_issues"])
+
+    def test_manual_underperforming_question_includes_limitations(self) -> None:
+        answer = answer_question(
+            "Why are some posts stuck around 90 views?",
+            self.dashboard,
+            provider="manual",
+        )
+
+        self.assertEqual(answer["provider"], "manual")
+        self.assertFalse(answer["llm_called"])
         self.assertEqual(
-            set(answer),
+            answer["trace"]["interpreted_intent"], "underperforming_or_low_views"
+        )
+        self.assertIn("get_underperforming_posts", answer["trace"]["tools_used"])
+        self.assertTrue(
+            any("impressions" in limitation for limitation in answer["limitations"])
+        )
+
+    def test_manual_response_schema_keeps_existing_fields_with_optional_trace(self) -> None:
+        answer = answer_question(
+            "Give me the general summary.",
+            self.dashboard,
+            provider="manual",
+        )
+
+        self.assertTrue(
             {
                 "summary",
                 "evidence",
@@ -70,9 +160,9 @@ class AnalystProviderTest(unittest.TestCase):
                 "limitations",
                 "provider",
                 "llm_called",
-            },
+            }.issubset(answer)
         )
-        self.assertTrue(answer["evidence"])
+        self.assertIn("trace", answer)
 
     def test_missing_dashboard_data_is_rejected(self) -> None:
         with self.assertRaisesRegex(AnalystError, "missing required fields"):
@@ -88,6 +178,19 @@ class AnalystProviderTest(unittest.TestCase):
 
         with self.assertRaisesRegex(AnalystError, "recommendation"):
             validate_answer_payload(payload)
+
+    def test_structured_response_validation_allows_optional_trace(self) -> None:
+        payload = valid_analyst_payload()
+        payload["trace"] = {
+            "interpreted_intent": "best_performing_posts",
+            "tools_used": ["get_top_posts"],
+            "observations": ["demo-004 had the highest engagement rate."],
+            "limitations": ["Grounded only in dashboard data."],
+        }
+
+        answer = validate_answer_payload(payload)
+
+        self.assertEqual(answer["trace"]["tools_used"], ["get_top_posts"])
 
     def test_safe_context_excludes_private_fields(self) -> None:
         context = build_safe_context(self.dashboard)

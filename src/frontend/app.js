@@ -66,6 +66,30 @@ function renderAnalystAnswer(answer) {
       answer.llm_called ? "LLM called" : "offline"
     }`,
   );
+  renderAnalystTrace(answer.trace);
+}
+
+function renderAnalystTrace(trace) {
+  const traceSection = document.getElementById("answer-trace");
+
+  if (!traceSection) {
+    return;
+  }
+
+  if (!trace) {
+    traceSection.setAttribute("hidden", "");
+    setText("trace-intent", "");
+    replaceList("trace-tools", [], "li");
+    replaceList("trace-observations", [], "li");
+    replaceList("trace-limitations", [], "li");
+    return;
+  }
+
+  traceSection.removeAttribute("hidden");
+  setText("trace-intent", trace.interpreted_intent || "Unavailable");
+  replaceList("trace-tools", trace.tools_used || [], "li");
+  replaceList("trace-observations", trace.observations || [], "li");
+  replaceList("trace-limitations", trace.limitations || [], "li");
 }
 
 function replaceList(id, items, itemName) {
@@ -367,6 +391,7 @@ if (analystClear) {
     setText("answer-recommendation", "No answer yet.");
     setText("answer-next-action", "No action yet.");
     replaceList("answer-limitations", [], "li");
+    renderAnalystTrace(null);
     setText("analyst-status", "Ready");
   });
 }

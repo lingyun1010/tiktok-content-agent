@@ -1074,6 +1074,61 @@ td.numeric {
   margin-top: 7px;
 }
 
+.answer-trace {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(220, 232, 223, 0.4);
+}
+
+.answer-trace summary {
+  cursor: pointer;
+  padding: 16px 18px;
+  color: var(--green);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.answer-trace dl {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  border-top: 1px solid var(--line);
+  background: var(--line);
+}
+
+.answer-trace dl > div {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 18px;
+  padding: 16px 18px;
+  background: var(--surface);
+}
+
+.answer-trace dt {
+  color: var(--soft-muted);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.answer-trace dd {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.answer-trace ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.answer-trace li + li {
+  margin-top: 6px;
+}
+
 .site-footer {
   display: flex;
   align-items: center;
@@ -1250,6 +1305,11 @@ td.numeric {
   }
 
   .answer-grid > div {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .answer-trace dl > div {
     grid-template-columns: 1fr;
     gap: 8px;
   }

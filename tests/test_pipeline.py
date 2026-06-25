@@ -597,8 +597,7 @@ class PipelineTest(unittest.TestCase):
 
         answer = answer_question("Which post is strongest?", dashboard_payload)
 
-        self.assertEqual(
-            set(answer),
+        self.assertTrue(
             {
                 "summary",
                 "evidence",
@@ -607,9 +606,10 @@ class PipelineTest(unittest.TestCase):
                 "limitations",
                 "provider",
                 "llm_called",
-            },
+            }.issubset(answer)
         )
         self.assertTrue(answer["evidence"])
+        self.assertIn("trace", answer)
         self.assertIn(
             dashboard_payload["dataset_overview"]["top_post"]["post_id"],
             json.dumps(answer),
